@@ -118,13 +118,13 @@ rule("Global init")
     {
         Disable Inspector Recording;
         Disable Built-In Game Mode Music;
-        "Global.botScalar = 0.100;"
+        Global.botScalar = 0.200;
         Global.bots = Empty Array;
         Global.zarya = Empty Array;
         Global.speedPercent = 125;
         Global.hasDecompressionFinished = False;
-        Create HUD Text(All Players(All Teams), Null, Null, Custom String("Speed: {0}%", Global.speedPercent), Right, 0, Color(White), Color(White),
-            Color(White), Visible To and String, Default Visibility);
+        "Create HUD Text(All Players(All Teams), Null, Null, Custom String("Speed: {0}%", Global.speedPercent), Right, 0, Color(White), Color(White),
+            Color(White), Visible To and String, Default Visibility);"
         Create HUD Text(All Players(All Teams), Null, Null, Custom String(
             "Host player: Press Interact to start and stop the song, \\nand Crouch+Primary or Crouch+Secondary Fire to change speed"), Top,
             0, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
@@ -164,7 +164,7 @@ rule("Player init")
     {
         //restrictAbilities
         Teleport(Event Player, Global.playerSpawn);
-        Start Scaling Player(Event Player, 0.75, True);
+        Start Scaling Player(Event Player, 0.8, True);
         Disable Movement Collision With Players(Event Player);
         Wait(0.016, Ignore Condition);
         Set Facing(Event Player, Direction From Angles(Global.defaultHorizontalFacingAngle, Vertical Facing Angle Of(Event Player)), To World);
@@ -275,6 +275,8 @@ rule("Interact: create dummy bots, start playing")
 
         Teleport(Global.zarya[0], Global.notePositions[64]);
         Teleport(Global.zarya[1], Global.notePositions[65]);
+        Start Scaling Player(Global.zarya[0], 1.0, True);
+        Start Scaling Player(Global.zarya[1], 1.0, True);
         
         Wait(1, Ignore Condition);
         Global.songPlayingState = 2;
@@ -391,6 +393,7 @@ rule("Play note")
             Start Holding Button(Global.zarya[Event Player.currentKey - 64], Button(Secondary Fire));
             Wait(0.064, Ignore Condition);
             Stop Holding Button(Global.zarya[Event Player.currentKey - 64], Button(Secondary Fire));
+            Set Facing(Global.zarya[Event Player.currentKey-64], Direction From Angles(Horizontal Facing Angle Of(Global.zarya[Event Player.currentKey-64])+90, Vertical Facing Angle Of(Global.zarya[Event Player.currentKey-64])), To World);
         Else If (0 == 0);
             Event Player.currentKeyPos = Global.notePositions[Global.pitchArrays[Round To Integer(
                 Event Player.currentPitchIndex / Global.maxArraySize, Down)][Event Player.currentPitchIndex % Global.maxArraySize]];
@@ -611,8 +614,8 @@ const PIANO_POSITION_SCRIPTS = {
             Vector(-84.103, 13.896, -107.652), Vector(-84.104, 13.885, -107.571), 
             Vector(-84.068, 13.885, -107.560), Vector(-84.021, 13.896, -107.626), 
             Vector(-84.023, 13.886, -107.553), Vector(-83.985, 13.895, -107.598), 
-            Vector(-84.061, 13.886, -107.598),
-            Vector(-85.217, 13.895, -108.021));
+            Vector(-83, 12.5, -108.021),
+            Vector(-86.217, 13, -109.021));
         Set Global Variable(botSpawn, Vector(-84.693, 13.873, -107.681));
         Set Global Variable(playerSpawn, Vector(-85.624, 14.349, -104.397));
         Set Global Variable(banTpLocation, Vector(-83.340, 13.248, -58.608));
