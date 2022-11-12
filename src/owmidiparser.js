@@ -12,6 +12,15 @@ const PIANO_RANGE = Object.freeze({
     MIN: 24,
     MAX: 88
 });
+
+const DRUM_LEFT = 70;
+const DRUM_RIGHT = 71;
+
+const DRUM_MAP = Object.freeze({
+    35: DRUM_LEFT, // bass
+    38: DRUM_RIGHT, // snare
+});
+
 const OCTAVE = 12;
 
 /* Settings for parsing the midi data.
@@ -118,11 +127,8 @@ function readMidiData(mid, settings) {
     let transposedNotes = 0;
 
     for (let track of mid.tracks) {
-
-        if (track.channel === 9) {
-            // MIDI channel 9 is used for percussion, ignore this track
-            continue;
-        }
+        let percussion = track.channel === 9;
+        console.log(percussion);
         
         for (let note of track.notes) {
             if (note.velocity === 0) {
@@ -141,6 +147,16 @@ function readMidiData(mid, settings) {
 
             // Move pitch to the 0-64 range
             notePitch -= PIANO_RANGE["MIN"];
+
+            // If this is percussion, use special range
+            if (percussion) {
+                if (DRUM_MAP[notePitch] === undefined) {
+                    console.log(notePitch)
+                    continue;
+                }
+                notePitch = DRUM_MAP[notePitch];
+                console.log(notePitch);
+            }
 
             let noteTime = roundToPlaces(note.time, NOTE_PRECISION);
 
@@ -300,13 +316,13 @@ function compressSongArrays(owArrays) {
     return compressedArrays;
 }
 
-
 function writeWorkshopRules(owArrays, maxVoices, isCompressionEnabled) {
     // Creates workshop rules containing the song data in arrays, 
     // ready to be pasted into Overwatch
 
     let workshopRules = [];
 
+    console.log(maxVoices);
     // The first rule contains general data: amount of voices (bots) required, max array size, etc.
     let firstRule = [`rule(\"General song data\"){event{Ongoing-Global;}actions{\n` +
                      `Global.maxBots = ${maxVoices};\n` +

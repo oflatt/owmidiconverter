@@ -165,6 +165,7 @@ rule("Player init")
         Wait(0.016, Ignore Condition);
         Set Facing(Event Player, Direction From Angles(Global.defaultHorizontalFacingAngle, Vertical Facing Angle Of(Event Player)), To World);
         Preload Hero(Event Player, Hero(Symmetra));
+        Preload Hero(Event Player, Hero(Zarya));
     }
 }
 
@@ -366,14 +367,23 @@ rule("Play note")
 
     actions
     {
-        Event Player.currentKeyPos = Global.notePositions[Global.pitchArrays[Round To Integer(
-            Event Player.currentPitchIndex / Global.maxArraySize, Down)][Event Player.currentPitchIndex % Global.maxArraySize]];
-        Teleport(Event Player, Event Player.currentKeyPos);
-        Wait(0.032, Ignore Condition);
-        Start Holding Button(Event Player, Button(Primary Fire));
-        Wait(0.064, Ignore Condition);
-        Stop Holding Button(Event Player, Button(Primary Fire));
-        Event Player.playNote = False;
+        If(Event Player.currentPitchIndex % Global.maxArraySize > 64);
+            Create Dummy Bot(Hero(Zarya), Team 1, -1, Global.botSpawn, Vector(-41.167, 12.887, 35));
+            Wait(0.032, Ignore Condition);
+            Start Holding Button(Last Created Entity, Button(Primary Fire));
+            Wait(0.064, Ignore Condition);
+            Stop Holding Button(Last Created Entity, Button(Primary Fire));
+            Destroy Dummy Bot(Team 1, 11);
+        Else If (0 == 0);
+            Event Player.currentKeyPos = Global.notePositions[Global.pitchArrays[Round To Integer(
+                Event Player.currentPitchIndex / Global.maxArraySize, Down)][Event Player.currentPitchIndex % Global.maxArraySize]];
+            Teleport(Event Player, Event Player.currentKeyPos);
+            Wait(0.032, Ignore Condition);
+            Start Holding Button(Event Player, Button(Primary Fire));
+            Wait(0.064, Ignore Condition);
+            Stop Holding Button(Event Player, Button(Primary Fire));
+            Event Player.playNote = False;
+        End;
     }
 }
 
@@ -551,7 +561,10 @@ const PIANO_POSITION_SCRIPTS = {
             Vector(-41.181, 12.887, 32.704), Vector(-41.107, 12.876, 32.686), 
             Vector(-41.112, 12.877, 32.643), Vector(-41.172, 12.886, 32.620), 
             Vector(-41.108, 12.877, 32.604), Vector(-41.167, 12.887, 32.581),
-            Vector(-41.104, 12.876, 32.562));
+            Vector(-41.104, 12.876, 32.562),
+            Vector(-41.167, 12.887, 35),
+            Vector(-41.167, 12.887, 31)
+            );
         Set Global Variable(botSpawn, Vector(-41.016, 13.158, 33.314));
         Set Global Variable(playerSpawn, Vector(-34.5, 12, 32.3));
         Set Global Variable(banTpLocation, Vector(-10.008, 15.802, -40.435));

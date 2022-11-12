@@ -16,7 +16,7 @@
 
         <div>
             <p>Upload .mid file:
-                <input type="file" id="file-input" accept="audio/midi">
+                <input type="file" id="file-input" accept="audio/midi" multiple>
             </p>
         </div>
 
@@ -303,29 +303,39 @@
         const MAX_PLAYERS = 12;
 
 
-        function loadFile() {
-            let file = document.getElementById("file-input").files[0];
-            if (!file) {
+        async function loadFile() {
+            let files = document.getElementById("file-input").files;
+            if (files.length == 0) {
                 return;
             }
+            let read = Array.from(files).map(file => {
+                // Define a new file reader
+                let reader = new FileReader();
 
+                // Create a new promise
+                return new Promise(resolve => {
+
+                    // Resolve the promise after reading file
+                    reader.onload = () => resolve(reader.result);
+
+                    // Read the file as a text
+                    reader.readAsArrayBuffer(file);
+
+                });
+            });
             updateElementValue("scriptOutput-textarea", "");
             updateElementValue("ruleOutput-textarea", "");
-
-            const reader = new FileReader();
-
-            reader.onload = function (event) {
+            let res = await Promise.all(read);
+            let midis = Array.from(res).map(buffer => {
                 try {
-                    // Read MIDI file with Tonejs/Midi
-                    let mid = new Midi(event.target.result);
-                    parseMidi(mid);
+                    return new Midi(event.target.result);
                 }
                 catch (error) {
                     updateElementValue("scriptOutput-textarea", ERRORS["GENERAL_ERROR"]);
                     console.error(error);
                 }
-            }
-            reader.readAsArrayBuffer(file);
+            });
+            parseMidi(midis[0]);
         }
         
 
