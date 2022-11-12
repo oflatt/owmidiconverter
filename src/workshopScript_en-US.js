@@ -90,7 +90,7 @@ variables
         2: currentPitchIndex
         3: playerToRemove
         4: currentKeyPos
-        5: iszarya
+        5: currentKey
 }
 
 subroutines
@@ -121,7 +121,7 @@ rule("Global init")
         "Global.botScalar = 0.100;"
         Global.bots = Empty Array;
         Global.zarya = Empty Array;
-        Global.speedPercent = 200;
+        Global.speedPercent = 125;
         Global.hasDecompressionFinished = False;
         Create HUD Text(All Players(All Teams), Null, Null, Custom String("Speed: {0}%", Global.speedPercent), Right, 0, Color(White), Color(White),
             Color(White), Visible To and String, Default Visibility);
@@ -189,15 +189,11 @@ rule("Dummy init")
 
     actions
     {
-        Teleport(Event Player, Global.botSpawn);
         Set Max Health(Event Player, 20000);
         Disable Movement Collision With Environment(Event Player, False);
         Disable Movement Collision With Players(Event Player);
-        If(Event Player.iszarya);
-            Start Scaling Player(Event Player, 1.0, True);
-        Else;
-            Start Scaling Player(Event Player, Global.botScalar, True);
-        End;
+        Start Scaling Player(Event Player, Global.botScalar, True);
+        Teleport(Event Player, Global.botSpawn);
         //invisibleBots
         Wait(0.016, Ignore Condition);
         Set Facing(Event Player, Direction From Angles(Global.defaultHorizontalFacingAngle, 89), To World);
@@ -270,12 +266,16 @@ rule("Interact: create dummy bots, start playing")
             Global.i -= 1;
             Wait(0.016, Ignore Condition);
         End;
-        CreateDummyBot(Hero(Zarya), Team 1, 0, Global.botSpawn, Vector(0, 0, 0));
+        Create Dummy Bot(Hero(Zarya), Team 1, -1, Global.botSpawn, Vector(0, 0, 0));
         Modify Global Variable(zarya, Append To Array, Last Created Entity);
-        CreateDummyBot(Hero(Zarya), Team 1, 1, Global.botSpawn, Vector(0, 0, 0));
+        Wait(0.016, Ignore Condition);
+        Create Dummy Bot(Hero(Zarya), Team 1, -1, Global.botSpawn, Vector(0, 0, 0));
         Modify Global Variable(zarya, Append To Array, Last Created Entity);
-        Global.zarya[0].iszarya = 1;
-        Global.zarya[1].iszarya = 1;
+        Wait(0.016, Ignore Condition);
+
+        Teleport(Global.zarya[0], Global.notePositions[64]);
+        Teleport(Global.zarya[1], Global.notePositions[65]);
+        
         Wait(1, Ignore Condition);
         Global.songPlayingState = 2;
     }
@@ -382,15 +382,15 @@ rule("Play note")
 
     actions
     {
-        If(Global.pitchArrays[Round To Integer(
-            Event Player.currentPitchIndex / Global.maxArraySize, Down)][Event Player.currentPitchIndex % Global.maxArraySize] > 63);
-            Event Player.currentKeyPos = Global.notePositions[Global.pitchArrays[Round To Integer(
-                Event Player.currentPitchIndex / Global.maxArraySize, Down)][Event Player.currentPitchIndex % Global.maxArraySize]];
-            Teleport(Global.zarya[0], Event Player.currentKeyPos);
+        Event Player.currentKey = Global.pitchArrays[Round To Integer(
+            Event Player.currentPitchIndex / Global.maxArraySize, Down)][Event Player.currentPitchIndex % Global.maxArraySize];
+        If(Event Player.currentKey > 63);
+            Event Player.currentKeyPos = Global.notePositions[Event Player.currentKey];
+            Teleport(Global.zarya[Event Player.currentKey - 64], Event Player.currentKeyPos);
             Wait(0.032, Ignore Condition);
-            Start Holding Button(Global.zarya[0], Button(Secondary Fire));
+            Start Holding Button(Global.zarya[Event Player.currentKey - 64], Button(Secondary Fire));
             Wait(0.064, Ignore Condition);
-            Stop Holding Button(Global.zarya[0], Button(Secondary Fire));
+            Stop Holding Button(Global.zarya[Event Player.currentKey - 64], Button(Secondary Fire));
         Else If (0 == 0);
             Event Player.currentKeyPos = Global.notePositions[Global.pitchArrays[Round To Integer(
                 Event Player.currentPitchIndex / Global.maxArraySize, Down)][Event Player.currentPitchIndex % Global.maxArraySize]];
@@ -611,8 +611,8 @@ const PIANO_POSITION_SCRIPTS = {
             Vector(-84.103, 13.896, -107.652), Vector(-84.104, 13.885, -107.571), 
             Vector(-84.068, 13.885, -107.560), Vector(-84.021, 13.896, -107.626), 
             Vector(-84.023, 13.886, -107.553), Vector(-83.985, 13.895, -107.598), 
-            Vector(-83.987, 13.886, -107.539), Vector(-80, 13.886, -104),
-            Vector(-88, 13.886, -110));
+            Vector(-84.061, 13.886, -107.598),
+            Vector(-85.217, 13.895, -108.021));
         Set Global Variable(botSpawn, Vector(-84.693, 13.873, -107.681));
         Set Global Variable(playerSpawn, Vector(-85.624, 14.349, -104.397));
         Set Global Variable(banTpLocation, Vector(-83.340, 13.248, -58.608));
