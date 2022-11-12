@@ -13,12 +13,12 @@ const PIANO_RANGE = Object.freeze({
     MAX: 88
 });
 
-const DRUM_LEFT = 70;
-const DRUM_RIGHT = 71;
+const DRUM_LEFT = 64;
+const DRUM_RIGHT = 65;
 
 const DRUM_MAP = Object.freeze({
-    35: DRUM_LEFT, // bass
-    38: DRUM_RIGHT, // snare
+    17: DRUM_LEFT, // bass
+    20: DRUM_RIGHT, // snare
 });
 
 const OCTAVE = 12;
