@@ -99,14 +99,6 @@ subroutines
     1: decompressArray
 }
 
-rule("By ScroogeD#5147 (Discord)")
-{
-    event
-    {
-        Ongoing - Global;
-    }
-}
-
 rule("Global init")
 {
     event
@@ -121,10 +113,8 @@ rule("Global init")
         Global.botScalar = 0.200;
         Global.bots = Empty Array;
         Global.zarya = Empty Array;
-        Global.speedPercent = 125;
+        Global.speedPercent = 100;
         Global.hasDecompressionFinished = False;
-        "Create HUD Text(All Players(All Teams), Null, Null, Custom String("Speed: {0}%", Global.speedPercent), Right, 0, Color(White), Color(White),
-            Color(White), Visible To and String, Default Visibility);"
         Create HUD Text(All Players(All Teams), Null, Null, Custom String(
             "Host player: Press Interact to start and stop the song, \\nand Crouch+Primary or Crouch+Secondary Fire to change speed"), Top,
             0, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
@@ -185,6 +175,7 @@ rule("Dummy init")
     conditions
     {
         Is Dummy Bot(Event Player) == True;
+        Hero Of(Event Player) != Hero(Zarya);
     }
 
     actions
@@ -197,6 +188,30 @@ rule("Dummy init")
         //invisibleBots
         Wait(0.016, Ignore Condition);
         Set Facing(Event Player, Direction From Angles(Global.defaultHorizontalFacingAngle, 89), To World);
+    }
+}
+
+rule("Dummy init zarya")
+{
+    event
+    {
+        Ongoing - Each Player;
+        All;
+        All;
+    }
+
+    conditions
+    {
+        Is Dummy Bot(Event Player) == True;
+        Hero Of(Event Player) == Hero(Zarya);
+    }
+
+    actions
+    {
+        Set Max Health(Event Player, 20000);
+        Disable Movement Collision With Environment(Event Player, False);
+        Disable Movement Collision With Players(Event Player);
+        Wait(0.016, Ignore Condition);
     }
 }
 
@@ -274,10 +289,12 @@ rule("Interact: create dummy bots, start playing")
         Wait(0.016, Ignore Condition);
 
         Teleport(Global.zarya[0], Global.notePositions[64]);
+        Wait(0.016, Ignore Condition);
+        Set Facing(Global.zarya[0], Direction From Angles(Global.defaultHorizontalFacingAngle, 89), To World);
+        Wait(0.016, Ignore Condition);
         Teleport(Global.zarya[1], Global.notePositions[65]);
-        Start Scaling Player(Global.zarya[0], 1.0, True);
-        Start Scaling Player(Global.zarya[1], 1.0, True);
-        
+        Wait(0.016, Ignore Condition);
+        Set Facing(Global.zarya[1], Direction From Angles(Global.defaultHorizontalFacingAngle, 89), To World);
         Wait(1, Ignore Condition);
         Global.songPlayingState = 2;
     }
@@ -387,13 +404,20 @@ rule("Play note")
         Event Player.currentKey = Global.pitchArrays[Round To Integer(
             Event Player.currentPitchIndex / Global.maxArraySize, Down)][Event Player.currentPitchIndex % Global.maxArraySize];
         If(Event Player.currentKey > 63);
-            Event Player.currentKeyPos = Global.notePositions[Event Player.currentKey];
-            Teleport(Global.zarya[Event Player.currentKey - 64], Event Player.currentKeyPos);
+            Create Dummy Bot(Hero(Zarya), Team 1, -1, Global.notePositions[Event Player.currentKey - 64], Direction From Angles(Horizontal Facing Angle Of(Global.zarya[Event Player.currentKey-64])+90, Vertical Facing Angle Of(Global.zarya[Event Player.currentKey-64])));
+            Destroy Dummy Bot(Team Of(Global.zarya[Event Player.currentKey - 64]), Slot Of(Global.zarya[Event Player.currentKey - 64]));
+            Global.zarya[Event Player.currentKey - 64] = Last Created Entity;
+            Wait(0.016, Ignore Condition);
+            Set Facing(Global.zarya[Event Player.currentKey - 64], Direction From Angles(Horizontal Facing Angle Of(Global.zarya[Event Player.currentKey - 64]), 89), To World);
+            Wait(0.016, Ignore Condition);
+            Teleport(Global.zarya[Event Player.currentKey - 64], Global.notePositions[Event Player.currentKey]);
             Wait(0.032, Ignore Condition);
+
+            Event Player.currentKeyPos = Global.notePositions[Event Player.currentKey];
+
             Start Holding Button(Global.zarya[Event Player.currentKey - 64], Button(Secondary Fire));
             Wait(0.064, Ignore Condition);
             Stop Holding Button(Global.zarya[Event Player.currentKey - 64], Button(Secondary Fire));
-            Set Facing(Global.zarya[Event Player.currentKey-64], Direction From Angles(Horizontal Facing Angle Of(Global.zarya[Event Player.currentKey-64])+90, Vertical Facing Angle Of(Global.zarya[Event Player.currentKey-64])), To World);
         Else If (0 == 0);
             Event Player.currentKeyPos = Global.notePositions[Global.pitchArrays[Round To Integer(
                 Event Player.currentPitchIndex / Global.maxArraySize, Down)][Event Player.currentPitchIndex % Global.maxArraySize]];
