@@ -154,7 +154,7 @@ rule("Player init")
     {
         //restrictAbilities
         Teleport(Event Player, Global.playerSpawn);
-        Start Scaling Player(Event Player, 0.8, True);
+        Start Scaling Player(Event Player, 0.6, True);
         Disable Movement Collision With Players(Event Player);
         Wait(0.016, Ignore Condition);
         Set Facing(Event Player, Direction From Angles(Global.defaultHorizontalFacingAngle, Vertical Facing Angle Of(Event Player)), To World);
@@ -270,6 +270,10 @@ rule("Interact: create dummy bots, start playing")
 
     actions
     {
+        Destroy Dummy Bot(Team Of(Global.zarya[0]), Slot Of(Global.zarya[0]));
+        Destroy Dummy Bot(Team Of(Global.zarya[0]), Slot Of(Global.zarya[1]));
+        Global.bots = Empty Array;
+        Global.zarya = Empty Array;
         "States:\\n0: song not playing\\n1: Preparing to play, creating bots\\n2: song playing" 
         Global.songPlayingState = 1;
         Global.i = 11;
