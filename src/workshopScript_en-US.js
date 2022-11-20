@@ -88,6 +88,9 @@ variables
         45: videoPos
         46: videoTmp
         47: videoInputReady
+        48: time
+        49: inputReady
+        50: print
 
     player:
         1: playNote
@@ -101,42 +104,6 @@ subroutines
 {
     0: endSong
     1: decompressArray
-}
-
-rule("Global init")
-{
-    event
-    {
-        Ongoing - Global;
-    }
-
-    actions
-    {
-        Disable Inspector Recording;
-        Disable Built-In Game Mode Music;
-        Global.botScalar = 0.200;
-        Global.bots = Empty Array;
-        Global.zarya = Empty Array;
-        Global.speedPercent = 100;
-        Global.hasDecompressionFinished = False;
-        Create HUD Text(All Players(All Teams), Null, Null, Custom String(
-            "Host player: Press Interact to start and stop the song, \\nand Crouch+Primary or Crouch+Secondary Fire to change speed"), Top,
-            0, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
-        Create HUD Text(All Players(All Teams), Null, Custom String("By oflatt"), Null, Left, 0, Color(White), Color(Yellow), Color(White),
-            Visible To and String, Default Visibility);
-        Create HUD Text(All Players(All Teams), Null, Custom String("Youtube: youtube.com/@oflatt"), Null, Left, 1, Color(White),
-            Color(Yellow), Color(White), Visible To and String, Default Visibility);
-        Create HUD Text(Filtered Array(All Players(All Teams), Has Status(Current Array Element, Frozen)), Custom String(
-            "The host player has decided to remove you temporarily. Please wait a minute before rejoining."), Null, Null, Top, 1, Color(White),
-            Color(White), Color(White), Visible To and String, Default Visibility);
-        Create HUD Text(Global.hasDecompressionFinished ? Empty Array : Host Player, Null, Null, Custom String(
-            " \\n\\n\\nDecompressing\\nPitch Arrays      {0}%\\nTime Arrays        {1}%\\nChord Arrays   {2}%", 
-            Global.decompressionPercentages[0], Global.decompressionPercentages[1], Global.decompressionPercentages[2]), 
-            Top, 10, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
-        Global.decompressionPercentages = Array(0, 0, 0);
-        Global.video = Array(Array());
-        Global.videoInputReady = True;
-    }
 }
 
 
@@ -271,7 +238,7 @@ rule("Interact: create dummy bots, start playing")
     {
         Is Button Held(Host Player, Button(Interact)) == True;
         Global.songPlayingState == 0;
-        (!Global.isCompressionEnabled || Global.hasDecompressionFinished) == True;
+        Global.hasDecompressionFinished == True;
     }
 
     actions
@@ -309,7 +276,6 @@ rule("Interact: create dummy bots, start playing")
         Global.songPlayingState = 2;
         
         Global.videoPos = 0;
-        //createEffects
     }
 }
 
@@ -359,6 +325,9 @@ rule("Play loop")
             While(Global.waitTime >= 0.016);
                 Wait(0.016, Ignore Condition);
                 Global.waitTime -= 0.016;
+                Global.time += 0.016;
+                "two frames per second lol"
+                Global.videoPos = Round To Integer(Global.time / 0.48, Down);
             End;
             "Loop as many times as there are pitches in the current chord, as indicated by the value in chordArrays. Assign the pitches to the bots."
             For Global Variable(i, 0, Global.chordArrays[Round To Integer(Global.timeArrayIndex / Global.maxArraySize, Down)
@@ -453,48 +422,44 @@ rule("Encode Video pixel")
 
     conditions
     {
-        Is Button Held(Host Player, Button(Crouch)) == True;
     }
 
     actions
     {
-        If(Count Of(Global.video[Global.videoPos]) >= 16*12);
-            Global.videoPos += 1;
-            Modify Global Variable(video, Append To Array, Array());
+        If(Is Button Held(Host Player, Button(Crouch)));
+            If(Global.inputReady);
+                If(Count Of(Global.video[Global.videoPos]) >= 16*12);
+                    Global.videoPos += 1;
+                    Global.video[Global.videoPos] = Empty Array;
+                End;
+                Global.videoTmp = Count Of(Global.video[Global.videoPos]);
+                Modify Global Variable At Index(video, Global.videoPos, Append To Array, 
+                    Vector(-85.410+0.1*Modulo(Global.videoTmp, 16), 15.5-(Round To Integer(Global.videoTmp / 16, Down)*0.1), -108.012));
+                Global.print = Custom String("ctrl {0} {1}", Vector(-85.410+0.1*Modulo(Global.videoTmp, 16), 15.5-(Round To Integer(Global.videoTmp / 16, Down)*0.1), -108.012), Global.video[1][1]);
+                Global.inputReady = False;
+            End;
+        Else If(Is Button Held(Host Player, Button(Jump)));
+            If(Global.inputReady);
+                If(Count Of(Global.video[Global.videoPos]) >= 16*12);
+                    Global.videoPos += 1;
+                    Modify Global Variable(video, Append To Array, Array());
+                End;
+                Modify Global Variable At Index(video, Global.videoPos, Append To Array, Vector(0, 0, 0));
+                Global.inputReady = False;
+            End;
+        Else;
+            Global.inputReady = True;
         End;
-        Global.videoTmp = Count Of(Global.video[Global.videoPos]);
-        Modify Global Variable At Index(video, Global.videoPos, Append To Array, 
-            Vector(-85.410+0.1*Modulo(Global.videoTmp, 16), 15.5-(Round To Integer(Global.videoTmp / 16, Down)*0.1), -108.012));
-    }
-}
 
-rule("Encode Video blank")
-{
-    event
-    {
-        Ongoing - Global;
-    }
-
-    conditions
-    {
-        Is Button Held(Host Player, Button(Jump)) == True;
-    }
-
-    actions
-    {
-        If(Count Of(Global.video[Global.videoPos]) >= 16*12);
-            Global.videoPos += 1;
-            Modify Global Variable(video, Append To Array, Array());
-        End;
-        Modify Global Variable At Index(video, Global.videoPos, Append To Array, 
-            Vector(0, 0, 0));
+        Wait(0.016, Ignore Condition);
+        Loop;
     }
 }
 
 
 //includeBanSystem
 
-rule("Decompress all arrays")
+rule("Initialization")
 {
     event
     {
@@ -503,36 +468,69 @@ rule("Decompress all arrays")
 
     conditions
     {
-        Global.isCompressionEnabled == True;
+        Is Button Held(Host Player, Button(Interact)) == True;
         Global.hasDecompressionFinished == False;
     }
 
     actions
     {
+        Disable Inspector Recording;
+        Disable Built-In Game Mode Music;
+        Global.botScalar = 0.200;
+        Global.bots = Empty Array;
+        Global.zarya = Empty Array;
+        Global.speedPercent = 100;
+        Global.hasDecompressionFinished = False;
+        Create HUD Text(All Players(All Teams), Null, Null, Custom String(
+            "Host player: Press Interact to start and stop the song, \\nand Crouch+Primary or Crouch+Secondary Fire to change speed"), Top,
+            0, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
+        Global.print = Custom String("By oflatt");
+        Create HUD Text(All Players(All Teams), Null, Global.print, Null, Left, 0, Color(White), Color(Yellow), Color(White),
+            Visible To and String, Default Visibility);
+        Create HUD Text(All Players(All Teams), Null, Custom String("youtube.com/@oflatt"), Null, Left, 1, Color(White),
+            Color(Yellow), Color(White), Visible To and String, Default Visibility);
+        Create HUD Text(Filtered Array(All Players(All Teams), Has Status(Current Array Element, Frozen)), Custom String(
+            "The host player has decided to remove you temporarily. Please wait a minute before rejoining."), Null, Null, Top, 1, Color(White),
+            Color(White), Color(White), Visible To and String, Default Visibility);
+        Create HUD Text(Global.hasDecompressionFinished ? Empty Array : Host Player, Null, Null, Custom String(
+            " \\n\\n\\nDecompressing\\nPitch Arrays      {0}%\\nTime Arrays        {1}%\\nChord Arrays   {2}%", 
+            Global.decompressionPercentages[0], Global.decompressionPercentages[1], Global.decompressionPercentages[2]), 
+            Top, 10, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
+        Global.decompressionPercentages = Array(0, 0, 0);
+        Global.video = Array(Array());
+        Global.videoInputReady = True;
+
         Wait(0.250, Ignore Condition);
-        Global.videoPos = 0;
-        "Decompress pitch arrays, time arrays and chord arrays"
-        For Global Variable(i, 0, 3, 1);
-            Global.compressedArray = Empty Array;
-            For Global Variable(I, 0, Count Of(Array(Global.pitchArrays, Global.timeArrays, Global.chordArrays)[Global.i]), 1);
-                Global.compressedArray[Global.I] = Array(Global.pitchArrays, Global.timeArrays, Global.chordArrays)[Global.i][Global.I];
-            End;
-            Global.finalCompressedElementLength = Global.compressionInfo[0][Global.i];
-            Global.songDataElementLength = Global.compressionInfo[1][Global.i];
-            Call Subroutine(decompressArray);
-            For Global Variable(I, 0, Count Of(Global.decompressedArray), 1);
-                If(Global.i == 0);
-                    Global.pitchArrays[Global.I] = Global.decompressedArray[Global.I];
-                Else If(Global.i == 1);
-                    Global.timeArrays[Global.I] = Global.decompressedArray[Global.I];
-                Else If(Global.i == 2);
-                    Global.chordArrays[Global.I] = Global.decompressedArray[Global.I];
+        If(Global.isCompressionEnabled);
+            "Decompress pitch arrays, time arrays and chord arrays"
+            For Global Variable(i, 0, 3, 1);
+                Global.compressedArray = Empty Array;
+                For Global Variable(I, 0, Count Of(Array(Global.pitchArrays, Global.timeArrays, Global.chordArrays)[Global.i]), 1);
+                    Global.compressedArray[Global.I] = Array(Global.pitchArrays, Global.timeArrays, Global.chordArrays)[Global.i][Global.I];
                 End;
+                Global.finalCompressedElementLength = Global.compressionInfo[0][Global.i];
+                Global.songDataElementLength = Global.compressionInfo[1][Global.i];
+                Call Subroutine(decompressArray);
+                For Global Variable(I, 0, Count Of(Global.decompressedArray), 1);
+                    If(Global.i == 0);
+                        Global.pitchArrays[Global.I] = Global.decompressedArray[Global.I];
+                    Else If(Global.i == 1);
+                        Global.timeArrays[Global.I] = Global.decompressedArray[Global.I];
+                    Else If(Global.i == 2);
+                        Global.chordArrays[Global.I] = Global.decompressedArray[Global.I];
+                    End;
+                End;
+                Global.compressedArray = Empty Array;
+                Global.decompressionPercentages[Global.i] = 100;
             End;
-            Global.compressedArray = Empty Array;
-            Global.decompressionPercentages[Global.i] = 100;
+            Global.decompressedArray = Empty Array;
         End;
-        Global.decompressedArray = Empty Array;
+        
+        Global.videoPos = 0;
+        Global.waitTime = 0;
+        Global.time = 0;
+        Wait(0.250, Ignore Condition);
+        //createEffects
         Global.hasDecompressionFinished = True;
     }
 }

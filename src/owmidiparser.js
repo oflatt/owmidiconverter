@@ -16,10 +16,6 @@ const PIANO_RANGE = Object.freeze({
 const DRUM_LEFT = 64;
 const DRUM_RIGHT = 65;
 
-const DRUM_MAP = Object.freeze({
-    17: DRUM_LEFT, // bass
-    20: DRUM_RIGHT, // snare
-});
 
 const OCTAVE = 12;
 
@@ -125,6 +121,7 @@ function readMidiData(mid, settings) {
 
     let skippedNotes = 0;
     let transposedNotes = 0;
+    let drumLeft = false;
 
     for (let track of mid.tracks) {
         let percussion = track.channel === 9;
@@ -150,12 +147,13 @@ function readMidiData(mid, settings) {
 
             // If this is percussion, use special range
             if (percussion) {
-                if (DRUM_MAP[notePitch] === undefined) {
-                    console.log(notePitch)
-                    continue;
+                if (drumLeft) {
+                    notePitch = DRUM_LEFT;
                 }
-                notePitch = DRUM_MAP[notePitch];
-                console.log(notePitch);
+                else {
+                    notePitch = DRUM_RIGHT;
+                }
+                drumLeft = !drumLeft;
             }
 
             let noteTime = roundToPlaces(note.time, NOTE_PRECISION);

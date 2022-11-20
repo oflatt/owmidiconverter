@@ -2,17 +2,20 @@
 StringLen, Length, Encoding
 Index := 0
 
-#o::
+Sleep 3000
 Loop % Length
 {
     Char := substr(Encoding, Index, 1)
-    MsgBox % Char
     if (Char == "0") {
+        SendInput {Ctrl}
+    } else if (Char == "1") {
         SendInput {Space}
+    } else if (Char == "`n") {
+        Sleep 0
     } else {
-        SendInput {1}
+        throw Char
     }
-    Sleep, 10
+    Sleep 100
     Index := Index + 1
 }
 
