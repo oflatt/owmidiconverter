@@ -461,13 +461,13 @@ rule("Encode Video pixel")
 
     actions
     {
-        If(Count Of(Global.video[Global.videoPos]) > 149);
+        If(Count Of(Global.video[Global.videoPos]) > 16*12);
             Global.videoPos += 1;
             Modify Global Variable(video, Append To Array, Array());
         End;
         Global.videoTmp = Count Of(Global.video[Global.videoPos]);
         Modify Global Variable At Index(video, Global.videoPos, Append To Array, 
-            Vector(-85.410+0.1*(Global.videoTmp - 15*(Round To Integer(Global.videoTmp / 15, Down))), 15.5-Round To Integer(Global.videoTmp / 15, Down)*0.1, -108.012));
+            Vector(-85.410+0.1*(Global.videoTmp - 16*(Round To Integer(Global.videoTmp / 16, Down))), 15.5-Round To Integer(Global.videoTmp / 16, Down)*0.1, -108.012));
     }
 }
 
@@ -485,7 +485,7 @@ rule("Encode Video blank")
 
     actions
     {
-        If(Count Of(Global.video[Global.videoPos]) > 149);
+        If(Count Of(Global.video[Global.videoPos]) >= 16*12);
             Global.videoPos += 1;
             Modify Global Variable(video, Append To Array, Array());
         End;
