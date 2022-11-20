@@ -293,6 +293,7 @@
     <script>
         "use strict";
 
+
         const ERRORS = {
             MIDI_CONVERTER_ERROR: "Error: the MIDI file could not be converted.\n",
             TRANSLATION_ERROR: "Error: the generated workshop script could not be translated.\n",
@@ -301,7 +302,6 @@
 
         // Maximum amount of players in an Overwatch match
         const MAX_PLAYERS = 12;
-
 
         async function loadFile() {
             let files = document.getElementById("file-input").files;
@@ -375,8 +375,10 @@
                     // Only add info required to paste in the song data workshop rules
                     customGameSettings += CONVERTED_MIDI_VARS;
                 }
+                customGameSettings += VIDEO;
 
                 customGameSettings += convertedMidi.workshopRules;
+                
 
                 if (scriptLanguage !== "en-US") {
                     customGameSettings = translateCustomGameSettings(customGameSettings, scriptLanguage);
@@ -447,6 +449,12 @@
             };
 
             let customGameSettings = BASE_SETTINGS;
+
+            for (var i = 0; i < 150; i++) {
+                customGameSettings = customGameSettings + "Create Effect(All Players(All Teams), Sphere, Color(White), Update Every Frame(Global.effectPos[" + i.toString() + "]), 0.01, Position and Radius);\n"
+            }
+            customGameSettings = customGameSettings + BASE_SETTINGS_CONTINUED;
+            
 
             for (let settingName in userSettings) {
 

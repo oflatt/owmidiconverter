@@ -84,6 +84,11 @@ variables
         41: J
         42: L
         43: zarya
+        44: video
+        45: videoPos
+        46: videoTmp
+        47: videoInputReady
+        48: effectPos
 
     player:
         1: playNote
@@ -130,6 +135,8 @@ rule("Global init")
             Global.decompressionPercentages[0], Global.decompressionPercentages[1], Global.decompressionPercentages[2]), 
             Top, 10, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
         Global.decompressionPercentages = Array(0, 0, 0);
+        Global.video = Array(Array());
+        Global.videoInputReady = True;
     }
 }
 
@@ -301,6 +308,18 @@ rule("Interact: create dummy bots, start playing")
         Set Facing(Global.zarya[1], Direction From Angles(Global.defaultHorizontalFacingAngle, 89), To World);
         Wait(1, Ignore Condition);
         Global.songPlayingState = 2;
+
+        Global.effectPos = Array();
+        Global.videoTmp = 0;
+        While (Global.videoTmp < 100);
+            Modify Global Variable(effectPos, Append To Array, Vector(0, 0, 0));
+            Global.videoTmp += 1;
+        End;
+        Global.videoPos = 0;
+        `
+
+const BASE_SETTINGS_CONTINUED = 
+`
     }
 }
 
@@ -360,6 +379,12 @@ rule("Play loop")
                 Global.pitchArrayIndex += 1;
             End;
             Global.timeArrayIndex += 1;
+
+            Global.videoTmp = 0;
+            While (Global.videoTmp < Count Of(Global.video[0]));
+                Global.effectPos[Global.videoTmp] = Vector(-85.410+0.1*(Global.videoTmp - 15*(Round To Integer(Global.videoTmp / 15, Down))), 15.5-Round To Integer(Global.videoTmp / 15, Down)*0.1, -108.012);
+                Global.videoTmp += 1;
+            End;
         End;
         Wait(0.250, Ignore Condition);
         Call Subroutine(endSong);
@@ -432,6 +457,50 @@ rule("Play note")
             Stop Holding Button(Event Player, Button(Primary Fire));
         End;
         Event Player.playNote = False;
+    }
+}
+
+rule("Encode Video")
+{
+    event
+    {
+        Ongoing - Global;
+    }
+
+    conditions
+    {
+        Is Button Held(Host Player, Button(Crouch)) == True;
+    }
+
+    actions
+    {
+        If(Count Of(Global.video[Global.videoPos]) > 149);
+            Global.videoPos += 1;
+            Modify Global Variable(video, Append To Array, Array());
+        End;
+        Modify Global Variable At Index(video, Global.videoPos, Append To Array, 1);
+    }
+}
+
+rule("Encode Video2")
+{
+    event
+    {
+        Ongoing - Global;
+    }
+
+    conditions
+    {
+        Is Button Held(Host Player, Button(Jump)) == True;
+    }
+
+    actions
+    {
+        If(Count Of(Global.video[Global.videoPos]) > 149);
+            Global.videoPos += 1;
+            Modify Global Variable(video, Append To Array, Array());
+        End;
+        Modify Global Variable At Index(video, Global.videoPos, Append To Array, 0);
     }
 }
 
