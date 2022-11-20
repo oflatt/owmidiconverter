@@ -375,7 +375,6 @@
                     // Only add info required to paste in the song data workshop rules
                     customGameSettings += CONVERTED_MIDI_VARS;
                 }
-                customGameSettings += VIDEO;
 
                 customGameSettings += convertedMidi.workshopRules;
                 
@@ -451,7 +450,7 @@
             let customGameSettings = BASE_SETTINGS;
 
             for (var i = 0; i < 150; i++) {
-                customGameSettings = customGameSettings + "Create Effect(All Players(All Teams), Sphere, Color(White), Update Every Frame(Global.effectPos[" + i.toString() + "]), 0.01, Position and Radius);\n"
+                customGameSettings = customGameSettings + "Create Effect(All Players(All Teams), Sphere, Color(White), Update Every Frame(Global.video[Global.videoPos][" + i.toString() + "]), 0.05, Position and Radius);\n"
             }
             customGameSettings = customGameSettings + BASE_SETTINGS_CONTINUED;
             

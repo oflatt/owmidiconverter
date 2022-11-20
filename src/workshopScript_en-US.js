@@ -88,7 +88,6 @@ variables
         45: videoPos
         46: videoTmp
         47: videoInputReady
-        48: effectPos
 
     player:
         1: playNote
@@ -309,12 +308,6 @@ rule("Interact: create dummy bots, start playing")
         Wait(1, Ignore Condition);
         Global.songPlayingState = 2;
 
-        Global.effectPos = Array();
-        Global.videoTmp = 0;
-        While (Global.videoTmp < 100);
-            Modify Global Variable(effectPos, Append To Array, Vector(0, 0, 0));
-            Global.videoTmp += 1;
-        End;
         Global.videoPos = 0;
         `
 
@@ -379,12 +372,6 @@ rule("Play loop")
                 Global.pitchArrayIndex += 1;
             End;
             Global.timeArrayIndex += 1;
-
-            Global.videoTmp = 0;
-            While (Global.videoTmp < Count Of(Global.video[0]));
-                Global.effectPos[Global.videoTmp] = Vector(-85.410+0.1*(Global.videoTmp - 15*(Round To Integer(Global.videoTmp / 15, Down))), 15.5-Round To Integer(Global.videoTmp / 15, Down)*0.1, -108.012);
-                Global.videoTmp += 1;
-            End;
         End;
         Wait(0.250, Ignore Condition);
         Call Subroutine(endSong);
@@ -460,7 +447,7 @@ rule("Play note")
     }
 }
 
-rule("Encode Video")
+rule("Encode Video pixel")
 {
     event
     {
@@ -478,11 +465,13 @@ rule("Encode Video")
             Global.videoPos += 1;
             Modify Global Variable(video, Append To Array, Array());
         End;
-        Modify Global Variable At Index(video, Global.videoPos, Append To Array, 1);
+        Global.videoTmp = Count Of(Global.video[Global.videoPos]);
+        Modify Global Variable At Index(video, Global.videoPos, Append To Array, 
+            Vector(-85.410+0.1*(Global.videoTmp - 15*(Round To Integer(Global.videoTmp / 15, Down))), 15.5-Round To Integer(Global.videoTmp / 15, Down)*0.1, -108.012));
     }
 }
 
-rule("Encode Video2")
+rule("Encode Video blank")
 {
     event
     {
@@ -500,7 +489,8 @@ rule("Encode Video2")
             Global.videoPos += 1;
             Modify Global Variable(video, Append To Array, Array());
         End;
-        Modify Global Variable At Index(video, Global.videoPos, Append To Array, 0);
+        Modify Global Variable At Index(video, Global.videoPos, Append To Array, 
+            Vector(0, 0, 0));
     }
 }
 
