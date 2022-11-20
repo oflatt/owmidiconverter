@@ -5,7 +5,7 @@ const BASE_SETTINGS = `settings
 {
     main
     {
-        Description: "Overwatch MIDI Pianist mode by ScroogeD. Convert MIDI songs to Overwatch piano songs with this converter on GitHub: github.com/ScroogeD2/owmidiconverter"
+        Description: "youtube.com/@oflatt"
     }
 
     lobby
@@ -122,9 +122,9 @@ rule("Global init")
         Create HUD Text(All Players(All Teams), Null, Null, Custom String(
             "Host player: Press Interact to start and stop the song, \\nand Crouch+Primary or Crouch+Secondary Fire to change speed"), Top,
             0, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
-        Create HUD Text(All Players(All Teams), Null, Custom String("By ScroogeD"), Null, Left, 0, Color(White), Color(Yellow), Color(White),
+        Create HUD Text(All Players(All Teams), Null, Custom String("By oflatt"), Null, Left, 0, Color(White), Color(Yellow), Color(White),
             Visible To and String, Default Visibility);
-        Create HUD Text(All Players(All Teams), Null, Custom String("Website: github.com/ScroogeD2/owmidiconverter"), Null, Left, 1, Color(White),
+        Create HUD Text(All Players(All Teams), Null, Custom String("Youtube: youtube.com/@oflatt"), Null, Left, 1, Color(White),
             Color(Yellow), Color(White), Visible To and String, Default Visibility);
         Create HUD Text(Filtered Array(All Players(All Teams), Has Status(Current Array Element, Frozen)), Custom String(
             "The host player has decided to remove you temporarily. Please wait a minute before rejoining."), Null, Null, Top, 1, Color(White),
@@ -307,12 +307,9 @@ rule("Interact: create dummy bots, start playing")
         Set Facing(Global.zarya[1], Direction From Angles(Global.defaultHorizontalFacingAngle, 89), To World);
         Wait(1, Ignore Condition);
         Global.songPlayingState = 2;
-
+        
         Global.videoPos = 0;
-        `
-
-const BASE_SETTINGS_CONTINUED = 
-`
+        //createEffects
     }
 }
 
@@ -461,13 +458,13 @@ rule("Encode Video pixel")
 
     actions
     {
-        If(Count Of(Global.video[Global.videoPos]) > 16*12);
+        If(Count Of(Global.video[Global.videoPos]) >= 16*12);
             Global.videoPos += 1;
             Modify Global Variable(video, Append To Array, Array());
         End;
         Global.videoTmp = Count Of(Global.video[Global.videoPos]);
         Modify Global Variable At Index(video, Global.videoPos, Append To Array, 
-            Vector(-85.410+0.1*(Global.videoTmp - 16*(Round To Integer(Global.videoTmp / 16, Down))), 15.5-Round To Integer(Global.videoTmp / 16, Down)*0.1, -108.012));
+            Vector(-85.410+0.1*Modulo(Global.videoTmp, 16), 15.5-(Round To Integer(Global.videoTmp / 16, Down)*0.1), -108.012));
     }
 }
 
@@ -504,10 +501,16 @@ rule("Decompress all arrays")
         Ongoing - Global;
     }
 
+    conditions
+    {
+        Global.isCompressionEnabled == True;
+        Global.hasDecompressionFinished == False;
+    }
+
     actions
     {
         Wait(0.250, Ignore Condition);
-        Abort If(!Global.isCompressionEnabled);
+        Global.videoPos = 0;
         "Decompress pitch arrays, time arrays and chord arrays"
         For Global Variable(i, 0, 3, 1);
             Global.compressedArray = Empty Array;
