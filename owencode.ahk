@@ -7,17 +7,22 @@ Loop % Length
 {
     Char := substr(Encoding, Index, 1)
     if (Char == "0") {
-        SendInput {Ctrl}
-    } else if (Char == "1") {
         SendInput {Space}
+    } else if (Char == "1") {
+        SendInput {Ctrl}
+    } else if (Char == ",") {
+        SendInput {e}
     } else if (Char == "`n") {
-        Sleep 0
+        SendInput {Shift}
     } else {
         throw Char
     }
     Sleep 100
     Index := Index + 1
 }
+
+Sleep 1000
+SendInput {f}
 
 Escape::
 ExitApp

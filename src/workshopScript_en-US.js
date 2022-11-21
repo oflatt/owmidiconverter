@@ -95,6 +95,7 @@ variables
         52: ti
         53: tj
         54: tk
+        56: prevVideoPos
 
     player:
         1: playNote
@@ -440,36 +441,52 @@ rule("Encode Video pixel")
                 Global.acc = Global.acc*2;
                 Global.inputReady = False;
             End;
-        Else If(Is Button Held(Host Player, Button(Ability 1)));
+        Else If(Is Button Held(Host Player, Button(Ability 2)));
             If(Global.inputReady);
                 Modify Global Variable At Index(video, Global.videoPos, Append To Array, Global.acc);
                 Global.acc = 0;
                 Global.inputReady = False;
             End;
-        Else If(Is Button Held(Host Player, Button(Ability 2)));
+        Else If(Is Button Held(Host Player, Button(Ability 1)));
             If(Global.inputReady);
                 Global.videoPos += 1;
                 Global.video[Global.videoPos] = Empty Array;
-                Global.inputReady = False;
                 Global.print = Custom String("{0}", Global.videoPos);
+                Global.inputReady = False;
             End;
         Else;
             Global.inputReady = True;
         End;
 
-        "two frames per second lol"
-        Global.videoPos = Round To Integer(Global.time / 0.48, Down);
-        Global.ti = 0;
-        Global.tk = 0;
-        While(Global.ti < Count Of(Global.video[Global.videoPos]));
-            Global.tj = 0;
-            While(Global.tj < Global.video[Global.videoPos][Global.ti+1]);
-                Global.vidBuffer[Global.tk] = Vector(-85.410+0.1*Modulo(Global.tk, 16), 15.5-(Round To Integer(Global.tk / 16, Down)*0.1), -108.012);
-                Global.tk += 1;
-                Global.tj += 1;
-            End;
-            Global.ti += 2;
+        If(Global.songPlayingState != 0);
+            "4 frames per second lol"
+            Global.videoPos = Round To Integer(Global.time / 0.24, Down);
         End;
+        
+        If(or(Global.videoPos > Global.prevVideoPos, (Global.inputReady == False)));
+            Global.ti = 0;
+            Global.tk = 0;
+            While(Global.ti < Count Of(Global.video[Global.videoPos]));
+                Global.tj = 0;
+                While(Global.tj < Global.video[Global.videoPos][Global.ti+1]);
+                    If(Global.video[Global.videoPos][Global.ti] == 1);
+                        Global.vidBuffer[Global.tk] = Vector(-85.410+0.1*Modulo(Global.tk, 16), 15.5-(Round To Integer(Global.tk / 16, Down)*0.1), -108.012);
+                    Else;
+                        Global.vidBuffer[Global.tk] = Vector(-82.410+0.1*Modulo(Global.tk, 16), 15.5-(Round To Integer(Global.tk / 16, Down)*0.1), -108.012);
+                    End;
+                    Global.tk += 1;
+                    Global.tj += 1;
+                End;
+                Global.ti += 2;
+            End;
+
+            While(Global.tk < 16*12);
+                Global.vidBuffer[Global.tk] = Vector(-82.410+0.1*Modulo(Global.tk, 16), 15.5-(Round To Integer(Global.tk / 16, Down)*0.1), -108.012);
+                Global.tk += 1;
+            End;
+        End;
+
+        Global.prevVideoPos = Global.videoPos;
 
 
         Wait(0.016, Ignore Condition);
@@ -729,8 +746,8 @@ const PIANO_POSITION_SCRIPTS = {
             Vector(-84.103, 13.896, -107.652), Vector(-84.104, 13.885, -107.571), 
             Vector(-84.068, 13.885, -107.560), Vector(-84.021, 13.896, -107.626), 
             Vector(-84.023, 13.886, -107.553), Vector(-83.985, 13.895, -107.598), 
-            Vector(-83, 12.5, -108.021),
-            Vector(-86.217, 13, -109.021));
+            Vector(-81, 13, -110.021),
+            Vector(-86.217, 13, -111.021));
         Set Global Variable(botSpawn, Vector(-84.693, 13.873, -107.681));
         Set Global Variable(playerSpawn, Vector(-85.624, 14.349, -104.397));
         Set Global Variable(banTpLocation, Vector(-83.340, 13.248, -58.608));

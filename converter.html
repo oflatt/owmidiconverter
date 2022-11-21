@@ -451,10 +451,10 @@
 
             let effects = "";
             for (var i = 0; i < 16*8; i++) {
-                effects = effects + "Create Effect(All Players(All Teams), Sphere, Color(White), Update Every Frame(Global.vidBuffer[" + i.toString() + "]), 0.05, Position and Radius);\n"
+                effects = effects + "Create Effect(All Players(All Teams), Sphere, Color(White), Global.vidBuffer[" + i.toString() + "], 0.05, Position and Radius);\n"
             }
             for (var i = 16*8; i < 16*12; i++) {
-                effects = effects + "Create In-World Text(All Players(All Teams), Custom String(\"*\"), Update Every Frame(Global.vidBuffer[" + i.toString() + "]+Vector(0,-0.1,0)), 2, Do Not Clip, Visible To Position String and Color, Color(White), Default Visibility);\n"
+                effects = effects + "Create In-World Text(All Players(All Teams), Custom String(\"*\"), Global.vidBuffer[" + i.toString() + "]+Vector(0,-0.1,0), 4, Do Not Clip, Visible To Position Stri n g and Col o r, Color(White), Default Visibility);\n"
               }
               customGameSettings = customGameSettings.replace("//createEffects", effects);
             
