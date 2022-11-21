@@ -137,6 +137,8 @@ rule("Player init")
         Set Facing(Event Player, Direction From Angles(Global.defaultHorizontalFacingAngle, Vertical Facing Angle Of(Event Player)), To World);
         Preload Hero(Event Player, Hero(Symmetra));
         Preload Hero(Event Player, Hero(Zarya));
+        Set Ability 1 Enabled(Event Player, False);
+        Set Ability 2 Enabled(Event Player, False);
     }
 }
 
@@ -438,16 +440,18 @@ rule("Encode Video pixel")
                 Global.acc = Global.acc*2;
                 Global.inputReady = False;
             End;
-        Else If(Is Button Held(Host Player, Button(Primary Fire)));
+        Else If(Is Button Held(Host Player, Button(Ability 1)));
             If(Global.inputReady);
                 Modify Global Variable At Index(video, Global.videoPos, Append To Array, Global.acc);
-                Global.inputReady = False;
                 Global.acc = 0;
+                Global.inputReady = False;
             End;
-        Else If(Is Button Held(Host Player, Button(Secondary Fire)));
+        Else If(Is Button Held(Host Player, Button(Ability 2)));
             If(Global.inputReady);
                 Global.videoPos += 1;
                 Global.video[Global.videoPos] = Empty Array;
+                Global.inputReady = False;
+                Global.print = Custom String("{0}", Global.videoPos);
             End;
         Else;
             Global.inputReady = True;
@@ -455,7 +459,6 @@ rule("Encode Video pixel")
 
         "two frames per second lol"
         Global.videoPos = Round To Integer(Global.time / 0.48, Down);
-        Global.print = Custom String("{0}", Global.video[Global.videoPos][1]);
         Global.ti = 0;
         Global.tk = 0;
         While(Global.ti < Count Of(Global.video[Global.videoPos]));
