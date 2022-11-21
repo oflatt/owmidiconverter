@@ -86,11 +86,15 @@ variables
         43: zarya
         44: video
         45: videoPos
-        46: videoTmp
-        47: videoInputReady
-        48: time
-        49: inputReady
-        50: print
+        46: videoInputReady
+        47: time
+        48: inputReady
+        49: print
+        50: acc
+        51: vidBuffer
+        52: ti
+        53: tj
+        54: tk
 
     player:
         1: playNote
@@ -326,8 +330,6 @@ rule("Play loop")
                 Wait(0.016, Ignore Condition);
                 Global.waitTime -= 0.016;
                 Global.time += 0.016;
-                "two frames per second lol"
-                Global.videoPos = Round To Integer(Global.time / 0.48, Down);
             End;
             "Loop as many times as there are pitches in the current chord, as indicated by the value in chordArrays. Assign the pitches to the bots."
             For Global Variable(i, 0, Global.chordArrays[Round To Integer(Global.timeArrayIndex / Global.maxArraySize, Down)
@@ -428,28 +430,44 @@ rule("Encode Video pixel")
     {
         If(Is Button Held(Host Player, Button(Crouch)));
             If(Global.inputReady);
-                If(Count Of(Global.video[Global.videoPos]) >= 16*12);
-                    Global.videoPos += 1;
-                    Global.video[Global.videoPos] = Empty Array;
-                End;
-                Global.videoTmp = Count Of(Global.video[Global.videoPos]);
-                Modify Global Variable At Index(video, Global.videoPos, Append To Array, 
-                    Vector(-85.410+0.1*Modulo(Global.videoTmp, 16), 15.5-(Round To Integer(Global.videoTmp / 16, Down)*0.1), -108.012));
-                Global.print = Custom String("ctrl {0} {1}", Vector(-85.410+0.1*Modulo(Global.videoTmp, 16), 15.5-(Round To Integer(Global.videoTmp / 16, Down)*0.1), -108.012), Global.video[1][1]);
+                Global.acc = Global.acc*2 + 1;
                 Global.inputReady = False;
             End;
         Else If(Is Button Held(Host Player, Button(Jump)));
             If(Global.inputReady);
-                If(Count Of(Global.video[Global.videoPos]) >= 16*12);
-                    Global.videoPos += 1;
-                    Modify Global Variable(video, Append To Array, Array());
-                End;
-                Modify Global Variable At Index(video, Global.videoPos, Append To Array, Vector(0, 0, 0));
+                Global.acc = Global.acc*2;
                 Global.inputReady = False;
+            End;
+        Else If(Is Button Held(Host Player, Button(Primary Fire)));
+            If(Global.inputReady);
+                Modify Global Variable At Index(video, Global.videoPos, Append To Array, Global.acc);
+                Global.inputReady = False;
+                Global.acc = 0;
+            End;
+        Else If(Is Button Held(Host Player, Button(Secondary Fire)));
+            If(Global.inputReady);
+                Global.videoPos += 1;
+                Global.video[Global.videoPos] = Empty Array;
             End;
         Else;
             Global.inputReady = True;
         End;
+
+        "two frames per second lol"
+        Global.videoPos = Round To Integer(Global.time / 0.48, Down);
+        Global.print = Custom String("{0}", Global.video[Global.videoPos][1]);
+        Global.ti = 0;
+        Global.tk = 0;
+        While(Global.ti < Count Of(Global.video[Global.videoPos]));
+            Global.tj = 0;
+            While(Global.tj < Global.video[Global.videoPos][Global.ti+1]);
+                Global.vidBuffer[Global.tk] = Vector(-85.410+0.1*Modulo(Global.tk, 16), 15.5-(Round To Integer(Global.tk / 16, Down)*0.1), -108.012);
+                Global.tk += 1;
+                Global.tj += 1;
+            End;
+            Global.ti += 2;
+        End;
+
 
         Wait(0.016, Ignore Condition);
         Loop;
@@ -480,6 +498,7 @@ rule("Initialization")
         Global.bots = Empty Array;
         Global.zarya = Empty Array;
         Global.speedPercent = 100;
+        Global.acc = 0;
         Global.hasDecompressionFinished = False;
         Create HUD Text(All Players(All Teams), Null, Null, Custom String(
             "Host player: Press Interact to start and stop the song, \\nand Crouch+Primary or Crouch+Secondary Fire to change speed"), Top,
@@ -531,6 +550,11 @@ rule("Initialization")
         Global.time = 0;
         Wait(0.250, Ignore Condition);
         //createEffects
+
+        Global.vidBuffer = Empty Array;
+        While(Count Of(Global.vidBuffer) < 16*12);
+            Modify Global Variable(vidBuffer, Append To Array, Vector(0, 0, 0));
+        End;
         Global.hasDecompressionFinished = True;
     }
 }
