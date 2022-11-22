@@ -95,7 +95,9 @@ variables
         52: ti
         53: tj
         54: tk
+        55: tl
         56: prevVideoPos
+        57: shouldPlay
 
     player:
         1: playNote
@@ -109,90 +111,6 @@ subroutines
 {
     0: endSong
     1: decompressArray
-}
-
-
-rule("Player init")
-{
-    event
-    {
-        Ongoing - Each Player;
-        All;
-        All;
-    }
-
-    conditions
-    {
-        Is Dummy Bot(Event Player) != True;
-        Has Spawned(Event Player) == True;
-        Is Alive(Event Player) == True;
-    }
-
-    actions
-    {
-        //restrictAbilities
-        Teleport(Event Player, Global.playerSpawn);
-        Start Scaling Player(Event Player, 0.6, True);
-        Disable Movement Collision With Players(Event Player);
-        Wait(0.016, Ignore Condition);
-        Set Facing(Event Player, Direction From Angles(Global.defaultHorizontalFacingAngle, Vertical Facing Angle Of(Event Player)), To World);
-        Preload Hero(Event Player, Hero(Symmetra));
-        Preload Hero(Event Player, Hero(Zarya));
-        Set Ability 1 Enabled(Event Player, False);
-        Set Ability 2 Enabled(Event Player, False);
-    }
-}
-
-rule("Dummy init")
-{
-    event
-    {
-        Ongoing - Each Player;
-        All;
-        All;
-    }
-
-    conditions
-    {
-        Is Dummy Bot(Event Player) == True;
-        Hero Of(Event Player) != Hero(Zarya);
-    }
-
-    actions
-    {
-        Set Max Health(Event Player, 20000);
-        Disable Movement Collision With Environment(Event Player, False);
-        Disable Movement Collision With Players(Event Player);
-        Start Scaling Player(Event Player, Global.botScalar, True);
-        Teleport(Event Player, Global.botSpawn);
-        //invisibleBots
-        Wait(0.016, Ignore Condition);
-        Set Facing(Event Player, Direction From Angles(Global.defaultHorizontalFacingAngle, 89), To World);
-    }
-}
-
-rule("Dummy init zarya")
-{
-    event
-    {
-        Ongoing - Each Player;
-        All;
-        All;
-    }
-
-    conditions
-    {
-        Is Dummy Bot(Event Player) == True;
-        Hero Of(Event Player) == Hero(Zarya);
-    }
-
-    actions
-    {
-        Set Max Health(Event Player, 20000);
-        Disable Movement Collision With Environment(Event Player, False);
-        Disable Movement Collision With Players(Event Player);
-        Wait(0.016, Ignore Condition);
-    }
 }
 
 rule("Primary fire: increase speed")
@@ -261,17 +179,31 @@ rule("Interact: create dummy bots, start playing")
             If(!Entity Exists(Players In Slot(Global.i, All Teams)));
                 Create Dummy Bot(Hero(Symmetra), Team 1, Global.i, Global.botSpawn, Vector(0, 0, 0));
                 Modify Global Variable(bots, Append To Array, Last Created Entity);
+
+                Set Max Health(Last Created Entity, 20000);
+                Disable Movement Collision With Environment(Last Created Entity, False);
+                Disable Movement Collision With Players(Last Created Entity);
+                Start Scaling Player(Last Created Entity, Global.botScalar, True);
+                Teleport(Last Created Entity, Global.botSpawn);
+                //invisibleBots
+                Wait(0.016, Ignore Condition);
+                Set Facing(Last Created Entity, Direction From Angles(Global.defaultHorizontalFacingAngle, 89), To World);
             End;
             Global.i -= 1;
             Wait(0.016, Ignore Condition);
         End;
-        Create Dummy Bot(Hero(Zarya), Team 1, -1, Global.botSpawn, Vector(0, 0, 0));
+        Create Dummy Bot(Hero(Zarya), Team 1, -1, Global.notePositions[64], Vector(0, 0, 0));
+        Modify Global Variable(zarya, Append To Array, Last Created Entity);
+        Set Max Health(Last Created Entity, 20000);
+        Disable Movement Collision With Environment(Last Created Entity, False);
+        Disable Movement Collision With Players(Last Created Entity);
+        Wait(0.016, Ignore Condition);
+        Create Dummy Bot(Hero(Zarya), Team 1, -1, Global.notePositions[65], Vector(0, 0, 0));
         Modify Global Variable(zarya, Append To Array, Last Created Entity);
         Wait(0.016, Ignore Condition);
-        Create Dummy Bot(Hero(Zarya), Team 1, -1, Global.botSpawn, Vector(0, 0, 0));
-        Modify Global Variable(zarya, Append To Array, Last Created Entity);
-        Wait(0.016, Ignore Condition);
-
+        Set Max Health(Last Created Entity, 20000);
+        Disable Movement Collision With Environment(Last Created Entity, False);
+        Disable Movement Collision With Players(Last Created Entity);
         Teleport(Global.zarya[0], Global.notePositions[64]);
         Wait(0.016, Ignore Condition);
         Set Facing(Global.zarya[0], Direction From Angles(Global.defaultHorizontalFacingAngle, 89), To World);
@@ -282,6 +214,11 @@ rule("Interact: create dummy bots, start playing")
         Wait(1, Ignore Condition);
         Global.songPlayingState = 2;
         
+        Global.videoPos = 0;
+        While(GLobal.videoPos < 50);
+            Modify Global Variable(video, Append To Array, Empty Array);
+            Global.videoPos += 1;
+        End;
         Global.videoPos = 0;
     }
 }
@@ -391,7 +328,7 @@ rule("Play note")
         Event Player.currentKey = Global.pitchArrays[Round To Integer(
             Event Player.currentPitchIndex / Global.maxArraySize, Down)][Event Player.currentPitchIndex % Global.maxArraySize];
         If(Event Player.currentKey > 63);
-            Create Dummy Bot(Hero(Zarya), Team 1, -1, Global.notePositions[Event Player.currentKey - 64], Direction From Angles(Horizontal Facing Angle Of(Global.zarya[Event Player.currentKey-64])+90, Vertical Facing Angle Of(Global.zarya[Event Player.currentKey-64])));
+            Create Dummy Bot(Hero(Zarya), Team 1, -1, Global.notePositions[Event Player.currentKey], Direction From Angles(Horizontal Facing Angle Of(Global.zarya[Event Player.currentKey-64])+90, Vertical Facing Angle Of(Global.zarya[Event Player.currentKey-64])));
             Destroy Dummy Bot(Team Of(Global.zarya[Event Player.currentKey - 64]), Slot Of(Global.zarya[Event Player.currentKey - 64]));
             Global.zarya[Event Player.currentKey - 64] = Last Created Entity;
             Wait(0.016, Ignore Condition);
@@ -418,7 +355,7 @@ rule("Play note")
     }
 }
 
-rule("Encode Video pixel")
+rule("display vid")
 {
     event
     {
@@ -450,7 +387,6 @@ rule("Encode Video pixel")
         Else If(Is Button Held(Host Player, Button(Ability 1)));
             If(Global.inputReady);
                 Global.videoPos += 1;
-                Global.video[Global.videoPos] = Empty Array;
                 Global.print = Custom String("{0}", Global.videoPos);
                 Global.inputReady = False;
             End;
@@ -460,34 +396,37 @@ rule("Encode Video pixel")
 
         If(Global.songPlayingState != 0);
             "4 frames per second lol"
-            Global.videoPos = Round To Integer(Global.time / 0.24, Down);
+            Global.videoPos = Round To Integer(Global.time / 0.48, Down);
         End;
+
+        Global.shouldPlay += 1;
         
-        If(or(Global.videoPos > Global.prevVideoPos, (Global.inputReady == False)));
+        If(or(Global.videoPos > Global.prevVideoPos, Global.shouldPlay >= 60));
             Global.ti = 0;
             Global.tk = 0;
+            Global.tl = False;
             While(Global.ti < Count Of(Global.video[Global.videoPos]));
                 Global.tj = 0;
-                While(Global.tj < Global.video[Global.videoPos][Global.ti+1]);
-                    If(Global.video[Global.videoPos][Global.ti] == 1);
+                While(Global.tj < Global.video[Global.videoPos][Global.ti]);
+                    If(Global.tl);
                         Global.vidBuffer[Global.tk] = Vector(-85.410+0.1*Modulo(Global.tk, 16), 15.5-(Round To Integer(Global.tk / 16, Down)*0.1), -108.012);
                     Else;
-                        Global.vidBuffer[Global.tk] = Vector(-82.410+0.1*Modulo(Global.tk, 16), 15.5-(Round To Integer(Global.tk / 16, Down)*0.1), -108.012);
+                        Global.vidBuffer[Global.tk] = Vector(0, 0, 0);
                     End;
                     Global.tk += 1;
                     Global.tj += 1;
                 End;
-                Global.ti += 2;
+                Global.tl = !Global.tl;
+                Global.ti += 1;
             End;
 
             While(Global.tk < 16*12);
-                Global.vidBuffer[Global.tk] = Vector(-82.410+0.1*Modulo(Global.tk, 16), 15.5-(Round To Integer(Global.tk / 16, Down)*0.1), -108.012);
+                Global.vidBuffer[Global.tk] = Vector(0, 0, 0);
                 Global.tk += 1;
             End;
+            Global.prevVideoPos = Global.videoPos;
+            Global.shouldPlay = 0;
         End;
-
-        Global.prevVideoPos = Global.videoPos;
-
 
         Wait(0.016, Ignore Condition);
         Loop;
@@ -512,6 +451,18 @@ rule("Initialization")
 
     actions
     {
+        Teleport(Host Player, Global.playerSpawn);
+        Start Scaling Player(Host Player, 0.6, True);
+        Disable Movement Collision With Players(Host Player);
+        Wait(0.016, Ignore Condition);
+        Set Facing(Host Player, Direction From Angles(Global.defaultHorizontalFacingAngle, Vertical Facing Angle Of(Host Player)), To World);
+        Preload Hero(Host Player, Hero(Symmetra));
+        Preload Hero(Host Player, Hero(Zarya));
+        Set Ability 1 Enabled(Host Player, False);
+        Set Ability 2 Enabled(Host Player, False);
+
+
+        Pause Match Time();
         Disable Inspector Recording;
         Disable Built-In Game Mode Music;
         Global.botScalar = 0.200;
@@ -520,9 +471,6 @@ rule("Initialization")
         Global.speedPercent = 100;
         Global.acc = 0;
         Global.hasDecompressionFinished = False;
-        Create HUD Text(All Players(All Teams), Null, Null, Custom String(
-            "Host player: Press Interact to start and stop the song, \\nand Crouch+Primary or Crouch+Secondary Fire to change speed"), Top,
-            0, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
         Global.print = Custom String("By oflatt");
         Create HUD Text(All Players(All Teams), Null, Global.print, Null, Left, 0, Color(White), Color(Yellow), Color(White),
             Visible To and String, Default Visibility);
@@ -749,7 +697,7 @@ const PIANO_POSITION_SCRIPTS = {
             Vector(-81, 13, -110.021),
             Vector(-86.217, 13, -111.021));
         Set Global Variable(botSpawn, Vector(-84.693, 13.873, -107.681));
-        Set Global Variable(playerSpawn, Vector(-85.624, 14.349, -104.397));
+        Set Global Variable(playerSpawn, Vector(-85.14, 13, -106.04));
         Set Global Variable(banTpLocation, Vector(-83.340, 13.248, -58.608));
         Set Global Variable(defaultHorizontalFacingAngle, 161.2);
     }
