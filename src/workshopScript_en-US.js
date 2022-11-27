@@ -213,13 +213,6 @@ rule("Interact: create dummy bots, start playing")
         Set Facing(Global.zarya[1], Direction From Angles(Global.defaultHorizontalFacingAngle, 89), To World);
         Wait(1, Ignore Condition);
         Global.songPlayingState = 2;
-        
-        Global.videoPos = 0;
-        While(GLobal.videoPos < 50);
-            Modify Global Variable(video, Append To Array, Empty Array);
-            Global.videoPos += 1;
-        End;
-        Global.videoPos = 0;
     }
 }
 
@@ -368,6 +361,8 @@ rule("display vid")
 
     actions
     {
+        Set Facing(Host Player, Direction From Angles(Global.defaultHorizontalFacingAngle, 0), To World);
+        Global.print = Custom String("{0}", Position Of(Host Player));
         If(Is Button Held(Host Player, Button(Crouch)));
             If(Global.inputReady);
                 Global.acc = Global.acc*2 + 1;
@@ -380,52 +375,32 @@ rule("display vid")
             End;
         Else If(Is Button Held(Host Player, Button(Ability 2)));
             If(Global.inputReady);
-                Modify Global Variable At Index(video, Global.videoPos, Append To Array, Global.acc);
+                Global.ti = 0;
+                While(Global.ti < Global.acc);
+                    Global.tk = Count Of(Global.video[Global.videoPos]);
+                    If(Global.tl);
+                        Modify Global Variable At Index(video, Global.videoPos, Append To Array, Vector(-85.7+0.15*Modulo(Global.tk, 16), 16.3-(Round To Integer(Global.tk / 16, Down)*0.15), -108.5+0.05*Modulo(Global.tk, 16)));
+                    Else;
+                        Modify Global Variable At Index(video, Global.videoPos, Append To Array, Vector(0,0,0));
+                    End;
+                    Global.ti += 1;
+                End;
+                
                 Global.acc = 0;
                 Global.inputReady = False;
+                Global.tl = !Global.tl;
             End;
         Else If(Is Button Held(Host Player, Button(Ability 1)));
             If(Global.inputReady);
-                Global.videoPos += 1;
+                Global.tl = False;
                 Global.print = Custom String("{0}", Global.videoPos);
                 Global.inputReady = False;
+                Wait(0.250, Ignore Condition);
+                "we just do one frame and don't try to keep all of them in memory"
+                Global.video = Array(Array());
             End;
         Else;
             Global.inputReady = True;
-        End;
-
-        If(Global.songPlayingState != 0);
-            "4 frames per second lol"
-            Global.videoPos = Round To Integer(Global.time / 0.48, Down);
-        End;
-
-        Global.shouldPlay += 1;
-        
-        If(or(Global.videoPos > Global.prevVideoPos, Global.shouldPlay >= 60));
-            Global.ti = 0;
-            Global.tk = 0;
-            Global.tl = False;
-            While(Global.ti < Count Of(Global.video[Global.videoPos]));
-                Global.tj = 0;
-                While(Global.tj < Global.video[Global.videoPos][Global.ti]);
-                    If(Global.tl);
-                        Global.vidBuffer[Global.tk] = Vector(-85.410+0.1*Modulo(Global.tk, 16), 15.5-(Round To Integer(Global.tk / 16, Down)*0.1), -108.012);
-                    Else;
-                        Global.vidBuffer[Global.tk] = Vector(0, 0, 0);
-                    End;
-                    Global.tk += 1;
-                    Global.tj += 1;
-                End;
-                Global.tl = !Global.tl;
-                Global.ti += 1;
-            End;
-
-            While(Global.tk < 16*12);
-                Global.vidBuffer[Global.tk] = Vector(0, 0, 0);
-                Global.tk += 1;
-            End;
-            Global.prevVideoPos = Global.videoPos;
-            Global.shouldPlay = 0;
         End;
 
         Wait(0.016, Ignore Condition);
@@ -455,7 +430,7 @@ rule("Initialization")
         Start Scaling Player(Host Player, 0.6, True);
         Disable Movement Collision With Players(Host Player);
         Wait(0.016, Ignore Condition);
-        Set Facing(Host Player, Direction From Angles(Global.defaultHorizontalFacingAngle, Vertical Facing Angle Of(Host Player)), To World);
+        Set Facing(Host Player, Direction From Angles(Global.defaultHorizontalFacingAngle, 0), To World);
         Preload Hero(Host Player, Hero(Symmetra));
         Preload Hero(Host Player, Hero(Zarya));
         Set Ability 1 Enabled(Host Player, False);
@@ -513,6 +488,13 @@ rule("Initialization")
             Global.decompressedArray = Empty Array;
         End;
         
+        Global.tl = False;
+
+        Global.videoPos = 0;
+        While(GLobal.videoPos < 1);
+            Modify Global Variable(video, Append To Array, Empty Array);
+            Global.videoPos += 1;
+        End;
         Global.videoPos = 0;
         Global.waitTime = 0;
         Global.time = 0;
@@ -640,9 +622,8 @@ const PIANO_POSITION_SCRIPTS = {
             Vector(-41.181, 12.887, 32.704), Vector(-41.107, 12.876, 32.686), 
             Vector(-41.112, 12.877, 32.643), Vector(-41.172, 12.886, 32.620), 
             Vector(-41.108, 12.877, 32.604), Vector(-41.167, 12.887, 32.581),
-            Vector(-41.104, 12.876, 32.562),
-            Vector(-41.167, 12.887, 35),
-            Vector(-41.167, 12.887, 31)
+            Vector(-41.104, 12.876, 31.562),
+            Vector(-41.167, 12.887, 36),
             );
         Set Global Variable(botSpawn, Vector(-41.016, 13.158, 33.314));
         Set Global Variable(playerSpawn, Vector(-34.5, 12, 32.3));
@@ -694,10 +675,10 @@ const PIANO_POSITION_SCRIPTS = {
             Vector(-84.103, 13.896, -107.652), Vector(-84.104, 13.885, -107.571), 
             Vector(-84.068, 13.885, -107.560), Vector(-84.021, 13.896, -107.626), 
             Vector(-84.023, 13.886, -107.553), Vector(-83.985, 13.895, -107.598), 
-            Vector(-81, 13, -110.021),
-            Vector(-86.217, 13, -111.021));
+            Vector(-79.6, 13, -106.7),
+            Vector(-89.33, 13, -109.94));
         Set Global Variable(botSpawn, Vector(-84.693, 13.873, -107.681));
-        Set Global Variable(playerSpawn, Vector(-85.14, 13, -106.04));
+        Set Global Variable(playerSpawn, Vector(-85.63, 13, -105.02));
         Set Global Variable(banTpLocation, Vector(-83.340, 13.248, -58.608));
         Set Global Variable(defaultHorizontalFacingAngle, 161.2);
     }

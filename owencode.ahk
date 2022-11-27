@@ -2,6 +2,7 @@
 StringLen, Length, Encoding
 Index := 0
 
+
 Sleep 3000
 Loop % Length
 {
@@ -12,19 +13,20 @@ Loop % Length
         SendInput {Ctrl Down}{Ctrl Up}
     } else if (Char == ",") {
         SendInput {e Down}{e Up}
-        Sleep 20
     } else if (Char == "`n") {
+        Sleep, 1000
+        ControlSend, ,!{PGUP}, OBS
+        Sleep, 500
         SendInput {Shift Down}{Shift Up}
-        Sleep 100
+        Sleep, 100
     } else {
         throw Char
     }
-    Sleep 80
+    Sleep 120
     Index := Index + 1
 }
 
 Sleep 1000
-SendInput {f}
 
 Escape::
 ExitApp
