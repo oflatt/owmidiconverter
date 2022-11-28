@@ -279,6 +279,21 @@ rule("Play loop")
     }
 }
 
+rule("print pos")
+{
+    event
+    {
+        Ongoing - Global;
+    }
+
+    actions
+    {
+        Global.print = Custom String("{0}", Position Of(Host Player));
+        Wait(0.016, Ignore Condition);
+        Loop;
+    }
+}
+
 rule("Stop playing")
 {
     event
@@ -348,66 +363,6 @@ rule("Play note")
     }
 }
 
-rule("display vid")
-{
-    event
-    {
-        Ongoing - Global;
-    }
-
-    conditions
-    {
-    }
-
-    actions
-    {
-        Set Facing(Host Player, Direction From Angles(Global.defaultHorizontalFacingAngle, 0), To World);
-        Global.print = Custom String("{0}", Position Of(Host Player));
-        If(Is Button Held(Host Player, Button(Crouch)));
-            If(Global.inputReady);
-                Global.acc = Global.acc*2 + 1;
-                Global.inputReady = False;
-            End;
-        Else If(Is Button Held(Host Player, Button(Jump)));
-            If(Global.inputReady);
-                Global.acc = Global.acc*2;
-                Global.inputReady = False;
-            End;
-        Else If(Is Button Held(Host Player, Button(Ability 2)));
-            If(Global.inputReady);
-                Global.ti = 0;
-                While(Global.ti < Global.acc);
-                    Global.tk = Count Of(Global.video[Global.videoPos]);
-                    If(Global.tl);
-                        Modify Global Variable At Index(video, Global.videoPos, Append To Array, Vector(-85.7+0.15*Modulo(Global.tk, 16), 16.3-(Round To Integer(Global.tk / 16, Down)*0.15), -108.5+0.05*Modulo(Global.tk, 16)));
-                    Else;
-                        Modify Global Variable At Index(video, Global.videoPos, Append To Array, Vector(0,0,0));
-                    End;
-                    Global.ti += 1;
-                End;
-                
-                Global.acc = 0;
-                Global.inputReady = False;
-                Global.tl = !Global.tl;
-            End;
-        Else If(Is Button Held(Host Player, Button(Ability 1)));
-            If(Global.inputReady);
-                Global.tl = False;
-                Global.print = Custom String("{0}", Global.videoPos);
-                Global.inputReady = False;
-                Wait(0.250, Ignore Condition);
-                "we just do one frame and don't try to keep all of them in memory"
-                Global.video = Array(Array());
-            End;
-        Else;
-            Global.inputReady = True;
-        End;
-
-        Wait(0.016, Ignore Condition);
-        Loop;
-    }
-}
-
 
 //includeBanSystem
 
@@ -427,7 +382,7 @@ rule("Initialization")
     actions
     {
         Teleport(Host Player, Global.playerSpawn);
-        Start Scaling Player(Host Player, 0.6, True);
+        Start Scaling Player(Host Player, 1, True);
         Disable Movement Collision With Players(Host Player);
         Wait(0.016, Ignore Condition);
         Set Facing(Host Player, Direction From Angles(Global.defaultHorizontalFacingAngle, 0), To World);
@@ -459,7 +414,6 @@ rule("Initialization")
             Global.decompressionPercentages[0], Global.decompressionPercentages[1], Global.decompressionPercentages[2]), 
             Top, 10, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
         Global.decompressionPercentages = Array(0, 0, 0);
-        Global.video = Array(Array());
         Global.videoInputReady = True;
 
         Wait(0.250, Ignore Condition);
@@ -489,23 +443,14 @@ rule("Initialization")
         End;
         
         Global.tl = False;
-
-        Global.videoPos = 0;
-        While(GLobal.videoPos < 1);
-            Modify Global Variable(video, Append To Array, Empty Array);
-            Global.videoPos += 1;
-        End;
         Global.videoPos = 0;
         Global.waitTime = 0;
         Global.time = 0;
         Wait(0.250, Ignore Condition);
-        //createEffects
 
-        Global.vidBuffer = Empty Array;
-        While(Count Of(Global.vidBuffer) < 16*12);
-            Modify Global Variable(vidBuffer, Append To Array, Vector(0, 0, 0));
-        End;
+        Global.video = //videohere        
         Global.hasDecompressionFinished = True;
+        //screenhere
     }
 }
 

@@ -287,6 +287,7 @@
     <!-- todo: only import convertMidi and CONVERTER_SETTINGS_INFO instead of the whole file -->
     <script type="text/javascript" src="src/owmidiparser.js"></script>
     <script type="text/javascript" src="src/workshopScript_en-US.js"></script>
+    <script type="text/javascript" src="frames.js"></script>
 
     <script type="text/javascript" src="https://unpkg.com/@tonejs/midi"></script>
 
@@ -448,16 +449,14 @@
             };
 
             let customGameSettings = BASE_SETTINGS;
+            customGameSettings = customGameSettings.replace("//videohere", FRAMES);
 
-            let effects = "";
-            for (var i = 0; i < 16*8; i++) {
-                effects = effects + "Create Effect(All Players(All Teams), Sphere, Color(White), Global.video[Global.videoPos][" + i.toString() + "], 0.075, Position and Radius);\n"
+            let screen = "";
+            for(var i = 0; i < 24; i++) {
+                screen += `Create In-World Text(All Players(All Teams), Global.video[Round To Integer((Global.time+0.016) / 0.48, Down)][${i}], Vector(-84.7, 15.7-${i}*0.05, -107.5), 1, Do Not Clip,  String, Color(White), Default Visibility);\n`;
             }
-            for (var i = 16*8; i < 16*12; i++) {
-                effects = effects + "Create In-World Text(All Players(All Teams), Custom String(\"*\"), Global.video[Global.videoPos][" + i.toString() + "]+Vector(0,-0.1,0), 6, Do Not Clip, Visible To Position String and Color, Color(White), Default Visibility);\n"
-              }
-              customGameSettings = customGameSettings.replace("//createEffects", effects);
-            
+
+            customGameSettings = customGameSettings.replace("//screenhere", screen);
 
             for (let settingName in userSettings) {
 
