@@ -116,7 +116,6 @@
                     </div>
                 </div>
                 <input class="checkboxInput" type="checkbox" id="includeBanSystemCheckbox">
-
             </div>
         </div>
 
@@ -344,6 +343,7 @@
             // Converts MIDI data, outputs it
 
             const converterSettings = getConverterSettings();
+            converterSettings["startTime"] = FRAME * 0.5;
             let convertedMidi = {};
             
             try {
@@ -436,7 +436,6 @@
 
             return userSettings;
         }
-        
 
         function generateIngameSettings(maxBots) {
             // Modifies BASE_SETTINGS based on the user's selected settings, 
