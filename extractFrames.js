@@ -8,7 +8,7 @@ if (fs.existsSync("./frames")) {
 fs.mkdirSync("./frames");
 
 try {
-    ffmpeg("./Videos/badapplesync.mp4").then(
+    ffmpeg("../Videos/badapplesync.mp4").then(
         (video) => {
             console.log("Processing Video...");
             video.setVideoSize("32x24");

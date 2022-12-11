@@ -11,7 +11,8 @@ if (myArgs.length !== 1) {
     return;
 }
 const currentFrame = parseInt(myArgs[0])
-
+// 2 fps
+const frameStep = 15;
 
 const build = (index) => {
     // Delete file if exists
@@ -23,7 +24,7 @@ const build = (index) => {
 };
 
 
-function doFrame(index = 1+currentFrame*15, frameNum = currentFrame) {
+function doFrame(index = 1+currentFrame*frameStep, frameNum = currentFrame) {
     let indexString = toFourDigits(Math.round(index).toString());
     let path = `frames/BadApple${indexString}.png`;
     if(frameNum >= currentFrame + 25) {
@@ -66,8 +67,7 @@ function doFrame(index = 1+currentFrame*15, frameNum = currentFrame) {
 
         console.log(index);
 
-        // 2 fps
-        doFrame(index + 15, frameNum+1);
+        doFrame(index + frameStep, frameNum+1);
     });
 }
 
