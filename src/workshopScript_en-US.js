@@ -98,6 +98,7 @@ variables
         55: tl
         56: prevVideoPos
         57: shouldPlay
+        59: currentAhead
 
     player:
         1: playNote
@@ -257,8 +258,8 @@ rule("Play loop")
         While(Global.timeArrayIndex < Global.maxArraySize * (Count Of(Global.timeArrays) - 1) + Count Of(Last Of(Global.timeArrays))
             && Global.songPlayingState);
             "Get the time interval (milliseconds) between chords from timeArrays, multiply by 1000 to get seconds, modify based on speed"
-            Global.waitTime += (Global.timeArrays[Round To Integer(Global.timeArrayIndex / Global.maxArraySize, Down)
-                ][Global.timeArrayIndex % Global.maxArraySize]) / (1000) * (100 / Global.speedPercent);
+            Global.waitTime += ((Global.timeArrays[Round To Integer(Global.timeArrayIndex / Global.maxArraySize, Down)]
+                                                  [Global.timeArrayIndex % Global.maxArraySize]) / (1000) * (100 / Global.speedPercent));
             While(Global.waitTime >= 0.016);
                 Wait(0.016, Ignore Condition);
                 Global.waitTime -= 0.016;
@@ -427,11 +428,12 @@ rule("Initialization")
                 Global.finalCompressedElementLength = Global.compressionInfo[0][Global.i];
                 Global.songDataElementLength = Global.compressionInfo[1][Global.i];
                 Call Subroutine(decompressArray);
+                Global.ti = 0;
                 For Global Variable(I, 0, Count Of(Global.decompressedArray), 1);
                     If(Global.i == 0);
                         Global.pitchArrays[Global.I] = Global.decompressedArray[Global.I];
                     Else If(Global.i == 1);
-                        Global.timeArrays[Global.I] = Global.decompressedArray[Global.I];
+                        Global.timeArrays[Global.I] = Global.decompressedArray[Global.I] + Global.ti;
                     Else If(Global.i == 2);
                         Global.chordArrays[Global.I] = Global.decompressedArray[Global.I];
                     End;
@@ -446,11 +448,12 @@ rule("Initialization")
         Global.videoPos = 0;
         Global.waitTime = 0;
         Global.time = 0;
+
+        Global.currentAhead = 0;
+
         Wait(0.250, Ignore Condition);
 
-        Global.video = //videohere        
         Global.hasDecompressionFinished = True;
-        //screenhere
     }
 }
 

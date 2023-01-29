@@ -448,14 +448,15 @@
             };
 
             let customGameSettings = BASE_SETTINGS;
-            customGameSettings = customGameSettings.replace("//videohere", FRAMES);
+            // code for videos in game
+            /*customGameSettings = customGameSettings.replace("//videohere", FRAMES);
 
             let screen = "";
             for(var i = 0; i < 24; i++) {
                 screen += `Create In-World Text(All Players(All Teams), Global.video[Round To Integer((Global.time+0.016) / 0.48, Down)][${i}], Vector(-84.7, 15.7-${i}*0.05, -107.5), 1, Do Not Clip,  String, Color(White), Default Visibility);\n`;
-            }
+            }*/
 
-            customGameSettings = customGameSettings.replace("//screenhere", screen);
+            //customGameSettings = customGameSettings.replace("//screenhere", screen);
 
             for (let settingName in userSettings) {
 
