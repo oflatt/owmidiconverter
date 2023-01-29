@@ -91,8 +91,10 @@ variables
         48: time
         49: nextFall
         50: nextFallChord
-        51: blockTimes
-        52: blockChords
+        51: nextCubePitch
+        52: blockTimes
+        53: blockChords
+        54: ccube
 
     player:
         1: playNote
@@ -284,6 +286,7 @@ rule("Interact: create dummy bots, start playing")
         Global.songPlayingState = 1;
         Global.i = 11;
         Global.time = 0.0;
+        Global.ccube = 0;
         While(Count Of(Global.bots) < Global.maxBots && Global.i > 0);
             If(!Entity Exists(Players In Slot(Global.i, All Teams)));
                 Create Dummy Bot(Hero(Symmetra), Team 1, Global.i, Global.botSpawn, Vector(0, 0, 0));
@@ -313,6 +316,10 @@ rule("Interact: create dummy bots, start playing")
         Global.nextFallChord = 0;
         Global.blockTimes = Empty Array;
         Global.blockChords = Empty Array;
+        For Global Variable(tempi, 0, //maxCubes, 1);
+            Modify Global Variable(blockTimes, Append To Array, 0.0);
+            Modify Global Variable(blockChords, Append To Array, 0);
+        End;
 
         //cubesHere
     }
@@ -336,6 +343,41 @@ rule("Interact: stop playing")
         Call Subroutine(endSong);
     }
 }
+
+rule("Cube loop")
+{
+    event
+    {
+        Ongoing - Global;
+    }
+
+    conditions
+    {
+        Global.songPlayingState == 2;
+    }
+
+    actions
+    {
+        
+        While(Global.songPlayingState == 2);
+            If(Global.blockTimes[Global.ccube] < Global.time);
+                Global.blockTimes[Global.ccube] = Global.timeArrays[Round To Integer(Global.nextFall / Global.maxArraySize, Down)][Global.nextFall % Global.maxArraySize];
+                Global.blockChords[Global.ccube] = Global.nextCubePitch;
+
+                Global.nextFallChord += 1;
+                If(Global.nextFallChord >= Global.chordArrays[Round To Integer(Global.nextFallChord / Global.maxArraySize, Down)][Global.nextFall % Global.maxArraySize]);
+                    Global.nextFallChord = 0;
+                    Global.nextFall += 1;
+                End;
+                Global.nextCubePitch += 1;
+            End;
+
+            Global.ccube = (Global.ccube+1) % Count Of(Global.blockTimes);
+            Wait(0.016, Ignore Condition);
+        End;
+    }
+}
+
 
 rule("Play loop")
 {

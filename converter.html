@@ -450,12 +450,17 @@
 
 
             var cubes = "";
-            let maxCubes = 20;
+            let maxCubes = 25;
             for(var i = 0; i < maxCubes; i++) {
-                cubes = cubes + `Create Effect(All Players(All Teams), Sphere, White, Vector(-84.943, 13 + (Global.blockTimes[${i}]-Global.time), -107.836), 0.100, Visible To Position and Radius);\n`
+                let pitchIndex = `Global.blockChords[${i}]`;
+                let notePos = `Global.pitchArrays[Round To Integer(${pitchIndex} / Global.maxArraySize, Down)][${pitchIndex} % Global.maxArraySize]`;
+                let pos = `Vector(0.0, (Global.blockTimes[${i}]-Global.time), 0.0)+Global.notePositions[${notePos}]`;
+
+                cubes = cubes + `Create Effect(All Players(All Teams), Sphere, Color(Purple), ${pos}, 0.005, Position and Radius);\n`
             }
 
             customGameSettings = customGameSettings.replace("//cubesHere", cubes);
+            customGameSettings = customGameSettings.replace("//maxCubes", `${maxCubes}`);
 
             for (let settingName in userSettings) {
 
