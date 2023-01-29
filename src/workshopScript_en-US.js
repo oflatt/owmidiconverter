@@ -62,7 +62,7 @@ variables
         10: maxArraySize
         11: banTpLocation
         12: currentBotIndex
-        13: waitTime
+        13: targetTime
         14: timeArrays
         15: pitchArrays
         16: chordArrays
@@ -84,6 +84,15 @@ variables
         41: J
         42: L
         43: zarya
+        44: tempi
+        45: tempj
+        46: tempk
+        47: templ
+        48: time
+        49: nextFall
+        50: nextFallChord
+        51: blockTimes
+        52: blockChords
 
     player:
         1: playNote
@@ -110,6 +119,7 @@ rule("Global init")
     {
         Disable Inspector Recording;
         Disable Built-In Game Mode Music;
+        Global.time = 0;
         Global.botScalar = 0.200;
         Global.bots = Empty Array;
         Global.zarya = Empty Array;
@@ -273,6 +283,7 @@ rule("Interact: create dummy bots, start playing")
         "States:\\n0: song not playing\\n1: Preparing to play, creating bots\\n2: song playing" 
         Global.songPlayingState = 1;
         Global.i = 11;
+        Global.time = 0.0;
         While(Count Of(Global.bots) < Global.maxBots && Global.i > 0);
             If(!Entity Exists(Players In Slot(Global.i, All Teams)));
                 Create Dummy Bot(Hero(Symmetra), Team 1, Global.i, Global.botSpawn, Vector(0, 0, 0));
@@ -297,6 +308,13 @@ rule("Interact: create dummy bots, start playing")
         Set Facing(Global.zarya[1], Direction From Angles(Global.defaultHorizontalFacingAngle, 89), To World);
         Wait(1, Ignore Condition);
         Global.songPlayingState = 2;
+
+        Global.nextFall = 0;
+        Global.nextFallChord = 0;
+        Global.blockTimes = Empty Array;
+        Global.blockChords = Empty Array;
+
+        //cubesHere
     }
 }
 
@@ -341,11 +359,11 @@ rule("Play loop")
         While(Global.timeArrayIndex < Global.maxArraySize * (Count Of(Global.timeArrays) - 1) + Count Of(Last Of(Global.timeArrays))
             && Global.songPlayingState);
             "Get the time interval (milliseconds) between chords from timeArrays, multiply by 1000 to get seconds, modify based on speed"
-            Global.waitTime += (Global.timeArrays[Round To Integer(Global.timeArrayIndex / Global.maxArraySize, Down)
-                ][Global.timeArrayIndex % Global.maxArraySize]) / (1000) * (100 / Global.speedPercent);
-            While(Global.waitTime >= 0.016);
+            Global.targetTime = (Global.timeArrays[Round To Integer(Global.timeArrayIndex / Global.maxArraySize, Down)
+                ][Global.timeArrayIndex % Global.maxArraySize]);
+            While(Global.time < Global.targetTime);
                 Wait(0.016, Ignore Condition);
-                Global.waitTime -= 0.016;
+                Global.time += 0.016;
             End;
             "Loop as many times as there are pitches in the current chord, as indicated by the value in chordArrays. Assign the pitches to the bots."
             For Global Variable(i, 0, Global.chordArrays[Round To Integer(Global.timeArrayIndex / Global.maxArraySize, Down)
@@ -380,7 +398,6 @@ rule("Stop playing")
         Global.songPlayingState = 0;
         Global.timeArrayIndex = 0;
         Global.pitchArrayIndex = 0;
-        Global.waitTime = 0;
     }
 }
 
@@ -467,6 +484,18 @@ rule("Decompress all arrays")
             Global.decompressionPercentages[Global.i] = 100;
         End;
         Global.decompressedArray = Empty Array;
+
+        Global.tempi = 0.0;
+        For Global Variable(I, 0, CountOf(Global.timeArrays), 1);
+            Global.tempk = Empty Array;
+            For Global Variable(tempj, 0, Count Of(Global.timeArrays[Global.I]), 1);
+                Global.tempi += (Global.timeArrays[Global.I][Global.tempj] / (1000.0) * (100.0 / Global.speedPercent));
+                Global.tempk[Global.tempj] = Global.tempi;
+            End;
+            Global.timeArrays[Global.I] = Global.tempk;
+        End;
+
+
         Global.hasDecompressionFinished = True;
     }
 }

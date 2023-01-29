@@ -448,6 +448,15 @@
 
             let customGameSettings = BASE_SETTINGS;
 
+
+            var cubes = "";
+            let maxCubes = 20;
+            for(var i = 0; i < maxCubes; i++) {
+                cubes = cubes + `Create Effect(All Players(All Teams), Sphere, White, Vector(-84.943, 13 + (Global.blockTimes[${i}]-Global.time), -107.836), 0.100, Visible To Position and Radius);\n`
+            }
+
+            customGameSettings = customGameSettings.replace("//cubesHere", cubes);
+
             for (let settingName in userSettings) {
 
                 let script = "";

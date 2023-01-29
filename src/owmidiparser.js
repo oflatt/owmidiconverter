@@ -71,7 +71,8 @@ const SONG_DATA_ELEMENT_LENGTHS = {
 const COMPRESSED_ELEMENT_LENGTH = 7;
 
 
-function convertMidi(mid, settings={}, isCompressionEnabled=true) {
+function convertMidi(mid, settings={}) {
+    let isCompressionEnabled = true;
     /*
     param mid:  a Midi object created by Tonejs/Midi
     param settings: a JS object containing user parameters for 
