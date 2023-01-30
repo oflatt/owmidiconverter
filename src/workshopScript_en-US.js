@@ -1,6 +1,62 @@
+const pianoHero = `Genji`;
+
+const old = `
+
+rule("Play note")
+{
+    event
+    {
+        Ongoing - Each Player;
+        All;
+        All;
+    }
+
+    conditions
+    {
+        Is Dummy Bot(Event Player) == True;
+        Event Player.playNote == True;
+    }
+
+    actions
+    {
+        
+        If(Event Player.currentKey > 63);
+            Create Dummy Bot(Hero(Zarya), Team 1, -1, Global.notePositions[Event Player.currentKey - 64], Direction From Angles(Horizontal Facing Angle Of(Global.zarya[Event Player.currentKey-64])+90, Vertical Facing Angle Of(Global.zarya[Event Player.currentKey-64])));
+            Destroy Dummy Bot(Team Of(Global.zarya[Event Player.currentKey - 64]), Slot Of(Global.zarya[Event Player.currentKey - 64]));
+            Global.zarya[Event Player.currentKey - 64] = Last Created Entity;
+            Wait(0.016, Ignore Condition);
+            Set Facing(Global.zarya[Event Player.currentKey - 64], Direction From Angles(Horizontal Facing Angle Of(Global.zarya[Event Player.currentKey - 64]), 89), To World);
+            Wait(0.016, Ignore Condition);
+            Teleport(Global.zarya[Event Player.currentKey - 64], Global.notePositions[Event Player.currentKey]);
+            Wait(0.032, Ignore Condition);
+
+            Event Player.currentKeyPos = Global.notePositions[Event Player.currentKey];
+
+            Start Holding Button(Global.zarya[Event Player.currentKey - 64], Button(Secondary Fire));
+            Wait(0.064, Ignore Condition);
+            Stop Holding Button(Global.zarya[Event Player.currentKey - 64], Button(Secondary Fire));
+        Else If (0 == 0);
+            
+            
+            
+        End;
+        Event Player.playNote = False;
+    }
+}`;
+
 // Custom game settings (lobby settings + workshop script) can only be imported 
 // if their language matches the text language of the game.
 // Only the English settings are needed, as OverPy can translate them to all other languages.
+const playNote = `
+    Global.currentKey = Global.pitchArrays[Round To Integer(
+        Global.pitchArrayIndex / Global.maxArraySize, Down)][Global.pitchArrayIndex % Global.maxArraySize];
+    Global.currentKeyPos = Global.notePositions[Global.pitchArrays[Round To Integer(
+        Global.pitchArrayIndex / Global.maxArraySize, Down)][Global.pitchArrayIndex % Global.maxArraySize]];
+    
+    Teleport(Global.bots[Global.currentBotIndex], Global.currentKeyPos);
+    Press Button(Global.bots[Global.currentBotIndex], Button(Primary Fire));
+`;
+
 const BASE_SETTINGS = `settings
 {
     main
@@ -12,7 +68,7 @@ const BASE_SETTINGS = `settings
     {
         Allow Players Who Are In Queue: Yes
         Match Voice Chat: Enabled
-        //restrictSlots
+        Max Team 1 Players: 1
         Max Team 2 Players: 0
         Return To Lobby: Never
     }
@@ -43,6 +99,12 @@ const BASE_SETTINGS = `settings
             No Ammunition Requirement: On
             Ultimate Generation: 250%
         }
+    }
+
+    extensions
+    {
+        Play More Effects
+        Spawn More Dummy Bots
     }
 }
 
@@ -95,13 +157,14 @@ variables
         52: blockTimes
         53: blockChords
         54: ccube
+        55: currentKey
+        56: currentKeyPos
 
     player:
         1: playNote
         2: currentPitchIndex
         3: playerToRemove
-        4: currentKeyPos
-        5: currentKey
+        
 }
 
 subroutines
@@ -170,7 +233,7 @@ rule("Player init")
         Disable Movement Collision With Players(Event Player);
         Wait(0.016, Ignore Condition);
         Set Facing(Event Player, Direction From Angles(Global.defaultHorizontalFacingAngle, Vertical Facing Angle Of(Event Player)), To World);
-        Preload Hero(Event Player, Hero(Symmetra));
+        Preload Hero(Event Player, Hero(${pianoHero}));
         Preload Hero(Event Player, Hero(Zarya));
     }
 }
@@ -287,12 +350,9 @@ rule("Interact: create dummy bots, start playing")
         Global.i = 11;
         Global.time = 0.0;
         Global.ccube = 0;
-        While(Count Of(Global.bots) < Global.maxBots && Global.i > 0);
-            If(!Entity Exists(Players In Slot(Global.i, All Teams)));
-                Create Dummy Bot(Hero(Symmetra), Team 1, Global.i, Global.botSpawn, Vector(0, 0, 0));
-                Modify Global Variable(bots, Append To Array, Last Created Entity);
-            End;
-            Global.i -= 1;
+        While(Count Of(Global.bots) < Global.maxBots);
+            Create Dummy Bot(Hero(${pianoHero}), Team 1, -1, Global.botSpawn, Vector(0, 0, 0));
+            Modify Global Variable(bots, Append To Array, Last Created Entity);
             Wait(0.016, Ignore Condition);
         End;
         Create Dummy Bot(Hero(Zarya), Team 1, -1, Global.botSpawn, Vector(0, 0, 0));
@@ -410,8 +470,7 @@ rule("Play loop")
             "Loop as many times as there are pitches in the current chord, as indicated by the value in chordArrays. Assign the pitches to the bots."
             For Global Variable(i, 0, Global.chordArrays[Round To Integer(Global.timeArrayIndex / Global.maxArraySize, Down)
                 ][Global.timeArrayIndex % Global.maxArraySize], 1);
-                Global.bots[Global.currentBotIndex].currentPitchIndex = Global.pitchArrayIndex;
-                Global.bots[Global.currentBotIndex].playNote = True;
+                ${playNote}
                 Global.currentBotIndex = (Global.currentBotIndex + 1) % Count Of(Global.bots);
                 Global.pitchArrayIndex += 1;
             End;
@@ -443,52 +502,6 @@ rule("Stop playing")
     }
 }
 
-rule("Play note")
-{
-    event
-    {
-        Ongoing - Each Player;
-        All;
-        All;
-    }
-
-    conditions
-    {
-        Is Dummy Bot(Event Player) == True;
-        Event Player.playNote == True;
-    }
-
-    actions
-    {
-        Event Player.currentKey = Global.pitchArrays[Round To Integer(
-            Event Player.currentPitchIndex / Global.maxArraySize, Down)][Event Player.currentPitchIndex % Global.maxArraySize];
-        If(Event Player.currentKey > 63);
-            Create Dummy Bot(Hero(Zarya), Team 1, -1, Global.notePositions[Event Player.currentKey - 64], Direction From Angles(Horizontal Facing Angle Of(Global.zarya[Event Player.currentKey-64])+90, Vertical Facing Angle Of(Global.zarya[Event Player.currentKey-64])));
-            Destroy Dummy Bot(Team Of(Global.zarya[Event Player.currentKey - 64]), Slot Of(Global.zarya[Event Player.currentKey - 64]));
-            Global.zarya[Event Player.currentKey - 64] = Last Created Entity;
-            Wait(0.016, Ignore Condition);
-            Set Facing(Global.zarya[Event Player.currentKey - 64], Direction From Angles(Horizontal Facing Angle Of(Global.zarya[Event Player.currentKey - 64]), 89), To World);
-            Wait(0.016, Ignore Condition);
-            Teleport(Global.zarya[Event Player.currentKey - 64], Global.notePositions[Event Player.currentKey]);
-            Wait(0.032, Ignore Condition);
-
-            Event Player.currentKeyPos = Global.notePositions[Event Player.currentKey];
-
-            Start Holding Button(Global.zarya[Event Player.currentKey - 64], Button(Secondary Fire));
-            Wait(0.064, Ignore Condition);
-            Stop Holding Button(Global.zarya[Event Player.currentKey - 64], Button(Secondary Fire));
-        Else If (0 == 0);
-            Event Player.currentKeyPos = Global.notePositions[Global.pitchArrays[Round To Integer(
-                Event Player.currentPitchIndex / Global.maxArraySize, Down)][Event Player.currentPitchIndex % Global.maxArraySize]];
-            Teleport(Event Player, Event Player.currentKeyPos);
-            Wait(0.032, Ignore Condition);
-            Start Holding Button(Event Player, Button(Primary Fire));
-            Wait(0.064, Ignore Condition);
-            Stop Holding Button(Event Player, Button(Primary Fire));
-        End;
-        Event Player.playNote = False;
-    }
-}
 
 
 //includeBanSystem
@@ -533,6 +546,10 @@ rule("Decompress all arrays")
             For Global Variable(tempj, 0, Count Of(Global.timeArrays[Global.I]), 1);
                 Global.tempi += (Global.timeArrays[Global.I][Global.tempj] / (1000.0) * (100.0 / Global.speedPercent));
                 Global.tempk[Global.tempj] = Global.tempi;
+                
+                If(Global.tempj % 5 == 0);
+                    Wait(0.016, Ignore Condition);
+                End;
             End;
             Global.timeArrays[Global.I] = Global.tempk;
         End;
@@ -584,7 +601,7 @@ rule("Decompress array")
                 End;
             End;
             "Wait a frame every 25th element to avoid high server load"
-            If(Global.I % 25 == 0);
+            If(Global.I % 5 == 0);
                 Wait(0.016, Ignore Condition);
                 "Update decomrpession progress HUD"
                 Global.decompressionPercentages[Global.i] = 100 * Global.I / Global.compressedArrayLength;
@@ -724,6 +741,5 @@ const PIANO_POSITION_SCRIPTS = {
 const SCRIPTS = {
     restrictAbilities: "Disallow Button(Event Player, Button(Melee));Set Ability 1 Enabled(Event Player, False);Set Ability 2 Enabled(Event Player, False);Set Ultimate Ability Enabled(Event Player, False);If(Compare(Event Player, !=, Host Player));Set Primary Fire Enabled(Event Player, False);Set Secondary Fire Enabled(Event Player, False);End;If(Compare(Hero Of(Event Player), ==, Hero(Wrecking Ball)));Disallow Button(Event Player, Button(Crouch));End;",
     invisibleBots: "Set Invisible(Event Player, All);",
-    restrictSlots: "Max Team 1 Players: 12",
     includeBanSystem: 'rule("Bans for host player"){event{Ongoing - Global;}conditions{Is Button Held(Host Player, Button(Reload)) == True;Is Button Held(Host Player, Button(Crouch)) == True;}actions{Host Player.playerToRemove = Ray Cast Hit Player(Eye Position(Host Player), Eye Position(Host Player) + Facing Direction Of(Host Player) * 30, Filtered Array(All Players(All Teams), !Is Dummy Bot(Current Array Element)), Host Player, True);Teleport(Host Player.playerToRemove, Global.banTpLocation);Set Status(Host Player.playerToRemove, Null, Frozen, 30);Host Player.playerToRemove = Null;}}'
 }

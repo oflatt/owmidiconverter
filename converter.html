@@ -41,7 +41,7 @@
                         Adding more bots may improve the end result for the cost of removing player slots from the game.</span>
                 </div>
             </div>
-            <input class="textInput" type="text" id="voicesInput" value="8">
+            <input class="textInput" type="text" id="voicesInput" value="15">
 
             <div class="tooltipWrapper">
                 <div class="tooltip">Language:
@@ -474,8 +474,8 @@
             }
 
             let restrictSlots = document.getElementById("restrictSlotsCheckbox").checked;
-            customGameSettings = customGameSettings.replace("//restrictSlots", 
-                                                            `Max Team 1 Players: ${restrictSlots ? MAX_PLAYERS - maxBots : MAX_PLAYERS}`)
+            //customGameSettings = customGameSettings.replace("//restrictSlots", 
+                                                            //`Max Team 1 Players: ${restrictSlots ? MAX_PLAYERS - maxBots : MAX_PLAYERS}`)
 
             
             let selectedPiano = document.getElementById("pianoSelectInput").value;

@@ -30,7 +30,7 @@ const OCTAVE = 12;
 */
 const CONVERTER_SETTINGS_INFO = Object.freeze({
     startTime:  {MIN:0, MAX:Infinity,   DEFAULT:0},
-    voices:     {MIN:6, MAX:11,         DEFAULT:6},
+    voices:     {MIN:1, MAX:20,         DEFAULT:15},
 });
 
 const DEFAULT_SETTINGS = {
