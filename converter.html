@@ -452,11 +452,9 @@
             var cubes = "";
             let maxCubes = 25;
             for(var i = 0; i < maxCubes; i++) {
-                let pitchIndex = `Global.blockChords[${i}]`;
-                let notePos = `Global.pitchArrays[Round To Integer(${pitchIndex} / Global.maxArraySize, Down)][${pitchIndex} % Global.maxArraySize]`;
-                let pos = `Vector(0.0, (Global.blockTimes[${i}]-Global.time), 0.0)+Global.notePositions[${notePos}]`;
+                let pos = `Global.blockPos[${i}]-Vector(0.0, Global.time*1.5, 0.0)`;
 
-                cubes = cubes + `Create Effect(All Players(All Teams), Sphere, Color(Purple), ${pos}, 0.005, Position and Radius);\n`
+                cubes = cubes + `Create Effect(All Players(All Teams), Sphere, Color(Purple), Update Every Frame(${pos}), 0.03, Position and Radius);\n`
             }
 
             customGameSettings = customGameSettings.replace("//cubesHere", cubes);
@@ -529,7 +527,6 @@
             } else {
                 element.innerHTML = element.innerHTML.replace("–", "+")
             }
-
         }
 
         function updateElementValue(elementId, newValue, keepOldValue = false) {

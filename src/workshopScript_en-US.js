@@ -1,7 +1,6 @@
-const pianoHero = `Genji`;
+const pianoHero = `Symmetra`;
 
 const old = `
-
 rule("Play note")
 {
     event
@@ -19,7 +18,6 @@ rule("Play note")
 
     actions
     {
-        
         If(Event Player.currentKey > 63);
             Create Dummy Bot(Hero(Zarya), Team 1, -1, Global.notePositions[Event Player.currentKey - 64], Direction From Angles(Horizontal Facing Angle Of(Global.zarya[Event Player.currentKey-64])+90, Vertical Facing Angle Of(Global.zarya[Event Player.currentKey-64])));
             Destroy Dummy Bot(Team Of(Global.zarya[Event Player.currentKey - 64]), Slot Of(Global.zarya[Event Player.currentKey - 64]));
@@ -54,7 +52,7 @@ const playNote = `
         Global.pitchArrayIndex / Global.maxArraySize, Down)][Global.pitchArrayIndex % Global.maxArraySize]];
     
     Teleport(Global.bots[Global.currentBotIndex], Global.currentKeyPos);
-    Press Button(Global.bots[Global.currentBotIndex], Button(Primary Fire));
+    Start Holding Button(Global.bots[Global.currentBotIndex], Button(Primary Fire));
 `;
 
 const BASE_SETTINGS = `settings
@@ -154,11 +152,10 @@ variables
         49: nextFall
         50: nextFallChord
         51: nextCubePitch
-        52: blockTimes
-        53: blockChords
-        54: ccube
-        55: currentKey
-        56: currentKeyPos
+        52: blockPos
+        53: ccube
+        54: currentKey
+        55: currentKeyPos
 
     player:
         1: playNote
@@ -185,10 +182,10 @@ rule("Global init")
         Disable Inspector Recording;
         Disable Built-In Game Mode Music;
         Global.time = 0;
-        Global.botScalar = 0.200;
+        Global.botScalar = 0.15;
         Global.bots = Empty Array;
         Global.zarya = Empty Array;
-        Global.speedPercent = 100;
+        Global.speedPercent = 90;
         Global.hasDecompressionFinished = False;
         Create HUD Text(All Players(All Teams), Null, Null, Custom String(
             "Host player: Press Interact to start and stop the song, \\nand Crouch+Primary or Crouch+Secondary Fire to change speed"), Top,
@@ -235,34 +232,6 @@ rule("Player init")
         Set Facing(Event Player, Direction From Angles(Global.defaultHorizontalFacingAngle, Vertical Facing Angle Of(Event Player)), To World);
         Preload Hero(Event Player, Hero(${pianoHero}));
         Preload Hero(Event Player, Hero(Zarya));
-    }
-}
-
-rule("Dummy init")
-{
-    event
-    {
-        Ongoing - Each Player;
-        All;
-        All;
-    }
-
-    conditions
-    {
-        Is Dummy Bot(Event Player) == True;
-        Hero Of(Event Player) != Hero(Zarya);
-    }
-
-    actions
-    {
-        Set Max Health(Event Player, 20000);
-        Disable Movement Collision With Environment(Event Player, False);
-        Disable Movement Collision With Players(Event Player);
-        Start Scaling Player(Event Player, Global.botScalar, True);
-        Teleport(Event Player, Global.botSpawn);
-        //invisibleBots
-        Wait(0.016, Ignore Condition);
-        Set Facing(Event Player, Direction From Angles(Global.defaultHorizontalFacingAngle, 89), To World);
     }
 }
 
@@ -353,6 +322,16 @@ rule("Interact: create dummy bots, start playing")
         While(Count Of(Global.bots) < Global.maxBots);
             Create Dummy Bot(Hero(${pianoHero}), Team 1, -1, Global.botSpawn, Vector(0, 0, 0));
             Modify Global Variable(bots, Append To Array, Last Created Entity);
+            Set Max Health(Last Created Entity, 2000000);
+            Disable Movement Collision With Environment(Last Created Entity, True);
+            Set Gravity(Last Created Entity, 0);
+            Disable Movement Collision With Players(Last Created Entity);
+            Start Scaling Player(Last Created Entity, Global.botScalar, True);
+            Teleport(Last Created Entity, Global.botSpawn);
+            //invisibleBots
+            Wait(0.016, Ignore Condition);
+            Set Facing(Last Created Entity, Direction From Angles(Global.defaultHorizontalFacingAngle, 89), To World);
+
             Wait(0.016, Ignore Condition);
         End;
         Create Dummy Bot(Hero(Zarya), Team 1, -1, Global.botSpawn, Vector(0, 0, 0));
@@ -374,11 +353,9 @@ rule("Interact: create dummy bots, start playing")
 
         Global.nextFall = 0;
         Global.nextFallChord = 0;
-        Global.blockTimes = Empty Array;
-        Global.blockChords = Empty Array;
+        Global.blockPos = Empty Array;
         For Global Variable(tempi, 0, //maxCubes, 1);
-            Modify Global Variable(blockTimes, Append To Array, 0.0);
-            Modify Global Variable(blockChords, Append To Array, 0);
+            Modify Global Variable(blockPos, Append To Array, 0.0);
         End;
 
         //cubesHere
@@ -420,9 +397,12 @@ rule("Cube loop")
     {
         
         While(Global.songPlayingState == 2);
-            If(Global.blockTimes[Global.ccube] < Global.time);
-                Global.blockTimes[Global.ccube] = Global.timeArrays[Round To Integer(Global.nextFall / Global.maxArraySize, Down)][Global.nextFall % Global.maxArraySize];
-                Global.blockChords[Global.ccube] = Global.nextCubePitch;
+            If(Y Component Of(Global.blockPos[Global.ccube])-Global.time*1.5 < Y Component Of(Global.notePositions[0])+0.5);
+                "note time: "
+                Global.tempj = Global.timeArrays[Round To Integer(Global.nextFall / Global.maxArraySize, Down)][Global.nextFall % Global.maxArraySize];
+                "pitch index: "
+                Global.tempi = Global.pitchArrays[Round To Integer(Global.nextCubePitch / Global.maxArraySize, Down)][Global.nextCubePitch % Global.maxArraySize];
+                Global.blockPos[Global.ccube] = Vector(0.0, Global.tempj*1.5+0.5, 0.0) + Global.notePositions[Global.tempi];
 
                 Global.nextFallChord += 1;
                 If(Global.nextFallChord >= Global.chordArrays[Round To Integer(Global.nextFallChord / Global.maxArraySize, Down)][Global.nextFall % Global.maxArraySize]);
@@ -432,9 +412,26 @@ rule("Cube loop")
                 Global.nextCubePitch += 1;
             End;
 
-            Global.ccube = (Global.ccube+1) % Count Of(Global.blockTimes);
-            Wait(0.016, Ignore Condition);
+            Global.ccube = (Global.ccube+1) % Count Of(Global.blockPos);
+            If(Global.ccube % 5 == 0);
+                Wait(0.016, Ignore Condition);
+            End;
         End;
+    }
+}
+
+rule("Time")
+{
+    event
+    {
+        Ongoing - Global;
+    }
+
+    actions
+    {
+        Global.time += 0.01667;
+        Wait(0.016, Ignore Condition);
+        Loop;
     }
 }
 
@@ -458,6 +455,8 @@ rule("Play loop")
         "value = songArray[math.floor(index / maxArraySize)][index % maxArraySize]"
         disabled Continue;
         "While((index < 2dArrayLength) && songPlayingState)"
+        Global.time = 0;
+
         While(Global.timeArrayIndex < Global.maxArraySize * (Count Of(Global.timeArrays) - 1) + Count Of(Last Of(Global.timeArrays))
             && Global.songPlayingState);
             "Get the time interval (milliseconds) between chords from timeArrays, multiply by 1000 to get seconds, modify based on speed"
@@ -465,7 +464,6 @@ rule("Play loop")
                 ][Global.timeArrayIndex % Global.maxArraySize]);
             While(Global.time < Global.targetTime);
                 Wait(0.016, Ignore Condition);
-                Global.time += 0.016;
             End;
             "Loop as many times as there are pitches in the current chord, as indicated by the value in chordArrays. Assign the pitches to the bots."
             For Global Variable(i, 0, Global.chordArrays[Round To Integer(Global.timeArrayIndex / Global.maxArraySize, Down)
@@ -640,39 +638,39 @@ const PIANO_POSITION_SCRIPTS = {
     actions
     {
         Global.notePositions = Array(
-            Vector(-41.168, 12.876, 34.061), Vector(-41.223, 12.885, 34.038), 
-            Vector(-41.168, 12.877, 34.017), Vector(-41.223, 12.885, 33.997), 
-            Vector(-41.164, 12.876, 33.982), Vector(-41.161, 12.876, 33.937), 
-            Vector(-41.226, 12.886, 33.913), Vector(-41.162, 12.876, 33.898), 
-            Vector(-41.217, 12.885, 33.877), Vector(-41.163, 12.877, 33.859), 
-            Vector(-41.222, 12.886, 33.834), Vector(-41.153, 12.874, 33.816), 
-            Vector(-41.148, 12.875, 33.774), Vector(-41.217, 12.886, 33.753), 
-            Vector(-41.153, 12.876, 33.731), Vector(-41.210, 12.885, 33.715), 
-            Vector(-41.157, 12.877, 33.696), Vector(-41.143, 12.875, 33.655), 
-            Vector(-41.212, 12.886, 33.626), Vector(-41.153, 12.877, 33.610), 
-            Vector(-41.205, 12.885, 33.595), Vector(-41.151, 12.877, 33.577), 
-            Vector(-41.208, 12.886, 33.551), Vector(-41.154, 12.878, 33.539), 
-            Vector(-41.132, 12.874, 33.492), Vector(-41.215, 12.887, 33.465), 
-            Vector(-41.151, 12.878, 33.444), Vector(-41.203, 12.886, 33.430), 
-            Vector(-41.149, 12.876, 33.415), Vector(-41.146, 12.877, 33.371), 
-            Vector(-41.203, 12.886, 33.348), Vector(-41.130, 12.875, 33.326), 
-            Vector(-41.202, 12.886, 33.309), Vector(-41.129, 12.875, 33.290), 
-            Vector(-41.201, 12.885, 33.271), Vector(-41.143, 12.878, 33.250), 
-            Vector(-41.122, 12.875, 33.210), Vector(-41.185, 12.883, 33.184), 
-            Vector(-41.139, 12.876, 33.163), Vector(-41.192, 12.886, 33.152), 
-            Vector(-41.136, 12.878, 33.126), Vector(-41.132, 12.877, 33.086), 
-            Vector(-41.186, 12.884, 33.061), Vector(-41.118, 12.875, 33.046), 
-            Vector(-41.190, 12.887, 33.027), Vector(-41.112, 12.873, 33.010), 
-            Vector(-41.184, 12.886, 32.986), Vector(-41.126, 12.877, 32.961),
-            Vector(-41.116, 12.876, 32.921), Vector(-41.185, 12.885, 32.902), 
-            Vector(-41.116, 12.876, 32.886), Vector(-41.192, 12.888, 32.865), 
-            Vector(-41.129, 12.878, 32.844), Vector(-41.120, 12.877, 32.802), 
-            Vector(-41.180, 12.887, 32.778), Vector(-41.124, 12.878, 32.765), 
-            Vector(-41.187, 12.888, 32.745), Vector(-41.108, 12.876, 32.729), 
-            Vector(-41.181, 12.887, 32.704), Vector(-41.107, 12.876, 32.686), 
-            Vector(-41.112, 12.877, 32.643), Vector(-41.172, 12.886, 32.620), 
-            Vector(-41.108, 12.877, 32.604), Vector(-41.167, 12.887, 32.581),
-            Vector(-41.104, 12.876, 32.562),
+            Vector(-41.168, 12.88, 34.061), Vector(-41.223, 12.88, 34.038), 
+            Vector(-41.168, 12.88, 34.017), Vector(-41.223, 12.88, 33.997), 
+            Vector(-41.164, 12.88, 33.982), Vector(-41.161, 12.88, 33.937), 
+            Vector(-41.226, 12.88, 33.913), Vector(-41.162, 12.88, 33.898), 
+            Vector(-41.217, 12.88, 33.877), Vector(-41.163, 12.88, 33.859), 
+            Vector(-41.222, 12.88, 33.834), Vector(-41.153, 12.88, 33.816), 
+            Vector(-41.148, 12.88, 33.774), Vector(-41.217, 12.88, 33.753), 
+            Vector(-41.153, 12.88, 33.731), Vector(-41.210, 12.88, 33.715), 
+            Vector(-41.157, 12.88, 33.696), Vector(-41.143, 12.88, 33.655), 
+            Vector(-41.212, 12.88, 33.626), Vector(-41.153, 12.88, 33.610), 
+            Vector(-41.205, 12.88, 33.595), Vector(-41.151, 12.88, 33.577), 
+            Vector(-41.208, 12.88, 33.551), Vector(-41.154, 12.88, 33.539), 
+            Vector(-41.132, 12.88, 33.492), Vector(-41.215, 12.88, 33.465), 
+            Vector(-41.151, 12.88, 33.444), Vector(-41.203, 12.88, 33.430), 
+            Vector(-41.149, 12.88, 33.415), Vector(-41.146, 12.88, 33.371), 
+            Vector(-41.203, 12.88, 33.348), Vector(-41.130, 12.88, 33.326), 
+            Vector(-41.202, 12.88, 33.309), Vector(-41.129, 12.88, 33.290), 
+            Vector(-41.201, 12.88, 33.271), Vector(-41.143, 12.88, 33.250), 
+            Vector(-41.122, 12.88, 33.210), Vector(-41.185, 12.88, 33.184), 
+            Vector(-41.139, 12.88, 33.163), Vector(-41.192, 12.88, 33.152), 
+            Vector(-41.136, 12.88, 33.126), Vector(-41.132, 12.88, 33.086), 
+            Vector(-41.186, 12.88, 33.061), Vector(-41.118, 12.88, 33.046), 
+            Vector(-41.190, 12.88, 33.027), Vector(-41.112, 12.88, 33.010), 
+            Vector(-41.184, 12.88, 32.986), Vector(-41.126, 12.88, 32.961),
+            Vector(-41.116, 12.88, 32.921), Vector(-41.185, 12.88, 32.902), 
+            Vector(-41.116, 12.88, 32.886), Vector(-41.192, 12.88, 32.865), 
+            Vector(-41.129, 12.88, 32.844), Vector(-41.120, 12.88, 32.802), 
+            Vector(-41.180, 12.88, 32.778), Vector(-41.124, 12.88, 32.765), 
+            Vector(-41.187, 12.88, 32.745), Vector(-41.108, 12.88, 32.729), 
+            Vector(-41.181, 12.88, 32.704), Vector(-41.107, 12.88, 32.686), 
+            Vector(-41.112, 12.88, 32.643), Vector(-41.172, 12.88, 32.620), 
+            Vector(-41.108, 12.88, 32.604), Vector(-41.167, 12.88, 32.581),
+            Vector(-41.104, 12.88, 32.562),
             Vector(-41.167, 12.887, 35),
             Vector(-41.167, 12.887, 31)
             );
