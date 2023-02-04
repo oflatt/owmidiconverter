@@ -1,4 +1,8 @@
-const pianoHero = `Symmetra`;
+const pianoHero = `D.Va`;
+const botzpos = `13.85`;
+const echozpos = `13.7`;
+const playerscale = `1`;
+
 
 const old = `
 rule("Play note")
@@ -52,7 +56,7 @@ const playNote = `
         Global.pitchArrayIndex / Global.maxArraySize, Down)][Global.pitchArrayIndex % Global.maxArraySize]];
     
     Teleport(Global.bots[Global.currentBotIndex], Global.currentKeyPos);
-    Start Holding Button(Global.bots[Global.currentBotIndex], Button(Primary Fire));
+    Press Button(Global.bots[Global.currentBotIndex], Button(Primary Fire));
 `;
 
 const BASE_SETTINGS = `settings
@@ -161,7 +165,6 @@ variables
         1: playNote
         2: currentPitchIndex
         3: playerToRemove
-        
 }
 
 subroutines
@@ -181,7 +184,6 @@ rule("Global init")
     {
         Disable Inspector Recording;
         Disable Built-In Game Mode Music;
-        Global.time = 0;
         Global.botScalar = 0.15;
         Global.bots = Empty Array;
         Global.zarya = Empty Array;
@@ -226,7 +228,7 @@ rule("Player init")
     {
         //restrictAbilities
         Teleport(Event Player, Global.playerSpawn);
-        Start Scaling Player(Event Player, 0.8, True);
+        Start Scaling Player(Event Player, ${playerscale}, True);
         Disable Movement Collision With Players(Event Player);
         Wait(0.016, Ignore Condition);
         Set Facing(Event Player, Direction From Angles(Global.defaultHorizontalFacingAngle, Vertical Facing Angle Of(Event Player)), To World);
@@ -317,23 +319,34 @@ rule("Interact: create dummy bots, start playing")
         "States:\\n0: song not playing\\n1: Preparing to play, creating bots\\n2: song playing" 
         Global.songPlayingState = 1;
         Global.i = 11;
-        Global.time = 0.0;
         Global.ccube = 0;
         While(Count Of(Global.bots) < Global.maxBots);
             Create Dummy Bot(Hero(${pianoHero}), Team 1, -1, Global.botSpawn, Vector(0, 0, 0));
+
             Modify Global Variable(bots, Append To Array, Last Created Entity);
-            Set Max Health(Last Created Entity, 2000000);
-            Disable Movement Collision With Environment(Last Created Entity, True);
-            Set Gravity(Last Created Entity, 0);
-            Disable Movement Collision With Players(Last Created Entity);
             Start Scaling Player(Last Created Entity, Global.botScalar, True);
             Teleport(Last Created Entity, Global.botSpawn);
             //invisibleBots
             Wait(0.016, Ignore Condition);
-            Set Facing(Last Created Entity, Direction From Angles(Global.defaultHorizontalFacingAngle, 89), To World);
+            Set Facing(Last Created Entity, Direction From Angles(Global.defaultHorizontalFacingAngle+180, 89), To World);
 
-            Wait(0.016, Ignore Condition);
+            Wait(0.1, Ignore Condition);
+            Damage(Last Created Entity, Null, 800);
         End;
+        Wait(3, Ignore Condition);
+
+        Global.tempi = 0;
+        While(Global.tempi < Count Of(Global.bots));
+            Set Facing(Global.bots[Global.tempi], Direction From Angles(Global.defaultHorizontalFacingAngle+180, 89), To World);
+            Set Gravity(Global.bots[Global.tempi], 0);
+            Disable Movement Collision With Environment(Global.bots[Global.tempi], False);
+            Disable Movement Collision With Players(Global.bots[Global.tempi]);
+            Teleport(Global.bots[Global.tempi], Global.notePositions[Global.tempi * Round To Integer(64 / Count Of(Global.bots), Down)]);
+            Press Button(Global.bots[Global.tempi], Button(Primary Fire));
+            Global.tempi += 1;
+        End;
+        Wait(1, Ignore Condition);
+
         Create Dummy Bot(Hero(Zarya), Team 1, -1, Global.botSpawn, Vector(0, 0, 0));
         Modify Global Variable(zarya, Append To Array, Last Created Entity);
         Wait(0.016, Ignore Condition);
@@ -455,7 +468,7 @@ rule("Play loop")
         "value = songArray[math.floor(index / maxArraySize)][index % maxArraySize]"
         disabled Continue;
         "While((index < 2dArrayLength) && songPlayingState)"
-        Global.time = 0;
+        Global.time = -4;
 
         While(Global.timeArrayIndex < Global.maxArraySize * (Count Of(Global.timeArrays) - 1) + Count Of(Last Of(Global.timeArrays))
             && Global.songPlayingState);
@@ -638,38 +651,38 @@ const PIANO_POSITION_SCRIPTS = {
     actions
     {
         Global.notePositions = Array(
-            Vector(-41.168, 12.88, 34.061), Vector(-41.223, 12.88, 34.038), 
-            Vector(-41.168, 12.88, 34.017), Vector(-41.223, 12.88, 33.997), 
-            Vector(-41.164, 12.88, 33.982), Vector(-41.161, 12.88, 33.937), 
-            Vector(-41.226, 12.88, 33.913), Vector(-41.162, 12.88, 33.898), 
-            Vector(-41.217, 12.88, 33.877), Vector(-41.163, 12.88, 33.859), 
-            Vector(-41.222, 12.88, 33.834), Vector(-41.153, 12.88, 33.816), 
-            Vector(-41.148, 12.88, 33.774), Vector(-41.217, 12.88, 33.753), 
-            Vector(-41.153, 12.88, 33.731), Vector(-41.210, 12.88, 33.715), 
-            Vector(-41.157, 12.88, 33.696), Vector(-41.143, 12.88, 33.655), 
-            Vector(-41.212, 12.88, 33.626), Vector(-41.153, 12.88, 33.610), 
-            Vector(-41.205, 12.88, 33.595), Vector(-41.151, 12.88, 33.577), 
-            Vector(-41.208, 12.88, 33.551), Vector(-41.154, 12.88, 33.539), 
-            Vector(-41.132, 12.88, 33.492), Vector(-41.215, 12.88, 33.465), 
-            Vector(-41.151, 12.88, 33.444), Vector(-41.203, 12.88, 33.430), 
-            Vector(-41.149, 12.88, 33.415), Vector(-41.146, 12.88, 33.371), 
-            Vector(-41.203, 12.88, 33.348), Vector(-41.130, 12.88, 33.326), 
-            Vector(-41.202, 12.88, 33.309), Vector(-41.129, 12.88, 33.290), 
-            Vector(-41.201, 12.88, 33.271), Vector(-41.143, 12.88, 33.250), 
-            Vector(-41.122, 12.88, 33.210), Vector(-41.185, 12.88, 33.184), 
-            Vector(-41.139, 12.88, 33.163), Vector(-41.192, 12.88, 33.152), 
-            Vector(-41.136, 12.88, 33.126), Vector(-41.132, 12.88, 33.086), 
-            Vector(-41.186, 12.88, 33.061), Vector(-41.118, 12.88, 33.046), 
-            Vector(-41.190, 12.88, 33.027), Vector(-41.112, 12.88, 33.010), 
-            Vector(-41.184, 12.88, 32.986), Vector(-41.126, 12.88, 32.961),
-            Vector(-41.116, 12.88, 32.921), Vector(-41.185, 12.88, 32.902), 
-            Vector(-41.116, 12.88, 32.886), Vector(-41.192, 12.88, 32.865), 
-            Vector(-41.129, 12.88, 32.844), Vector(-41.120, 12.88, 32.802), 
-            Vector(-41.180, 12.88, 32.778), Vector(-41.124, 12.88, 32.765), 
-            Vector(-41.187, 12.88, 32.745), Vector(-41.108, 12.88, 32.729), 
-            Vector(-41.181, 12.88, 32.704), Vector(-41.107, 12.88, 32.686), 
-            Vector(-41.112, 12.88, 32.643), Vector(-41.172, 12.88, 32.620), 
-            Vector(-41.108, 12.88, 32.604), Vector(-41.167, 12.88, 32.581),
+            Vector(-41.168, ${botzpos}, 34.061), Vector(-41.223, ${botzpos}, 34.038), 
+            Vector(-41.168, ${botzpos}, 34.017), Vector(-41.223, ${botzpos}, 33.997), 
+            Vector(-41.164, ${botzpos}, 33.982), Vector(-41.161, ${botzpos}, 33.937), 
+            Vector(-41.226, ${botzpos}, 33.913), Vector(-41.162, ${botzpos}, 33.898), 
+            Vector(-41.217, ${botzpos}, 33.877), Vector(-41.163, ${botzpos}, 33.859), 
+            Vector(-41.222, ${botzpos}, 33.834), Vector(-41.153, ${botzpos}, 33.816), 
+            Vector(-41.148, ${botzpos}, 33.774), Vector(-41.217, ${botzpos}, 33.753), 
+            Vector(-41.153, ${botzpos}, 33.731), Vector(-41.210, ${botzpos}, 33.715), 
+            Vector(-41.157, ${botzpos}, 33.696), Vector(-41.143, ${botzpos}, 33.655), 
+            Vector(-41.212, ${botzpos}, 33.626), Vector(-41.153, ${botzpos}, 33.610), 
+            Vector(-41.205, ${botzpos}, 33.595), Vector(-41.151, ${botzpos}, 33.577), 
+            Vector(-41.208, ${botzpos}, 33.551), Vector(-41.154, ${botzpos}, 33.539), 
+            Vector(-41.132, ${botzpos}, 33.492), Vector(-41.215, ${botzpos}, 33.465), 
+            Vector(-41.151, ${botzpos}, 33.444), Vector(-41.203, ${botzpos}, 33.430), 
+            Vector(-41.149, ${botzpos}, 33.415), Vector(-41.146, ${botzpos}, 33.371), 
+            Vector(-41.203, ${botzpos}, 33.348), Vector(-41.130, ${botzpos}, 33.326), 
+            Vector(-41.202, ${botzpos}, 33.309), Vector(-41.129, ${botzpos}, 33.290), 
+            Vector(-41.201, ${botzpos}, 33.271), Vector(-41.143, ${botzpos}, 33.250), 
+            Vector(-41.122, ${botzpos}, 33.210), Vector(-41.185, ${botzpos}, 33.184), 
+            Vector(-41.139, ${botzpos}, 33.163), Vector(-41.192, ${botzpos}, 33.152), 
+            Vector(-41.136, ${botzpos}, 33.126), Vector(-41.132, ${botzpos}, 33.086), 
+            Vector(-41.186, ${botzpos}, 33.061), Vector(-41.118, ${botzpos}, 33.046), 
+            Vector(-41.190, ${botzpos}, 33.027), Vector(-41.112, ${botzpos}, 33.010), 
+            Vector(-41.184, ${botzpos}, 32.986), Vector(-41.126, ${botzpos}, 32.961),
+            Vector(-41.116, ${botzpos}, 32.921), Vector(-41.185, ${botzpos}, 32.902), 
+            Vector(-41.116, ${botzpos}, 32.886), Vector(-41.192, ${botzpos}, 32.865), 
+            Vector(-41.129, ${botzpos}, 32.844), Vector(-41.120, ${botzpos}, 32.802), 
+            Vector(-41.180, ${botzpos}, 32.778), Vector(-41.124, ${botzpos}, 32.765), 
+            Vector(-41.187, ${botzpos}, 32.745), Vector(-41.108, ${botzpos}, 32.729), 
+            Vector(-41.181, ${botzpos}, 32.704), Vector(-41.107, ${botzpos}, 32.686), 
+            Vector(-41.112, ${botzpos}, 32.643), Vector(-41.172, ${botzpos}, 32.620), 
+            Vector(-41.108, ${botzpos}, 32.604), Vector(-41.167, ${botzpos}, 32.581),
             Vector(-41.104, 12.88, 32.562),
             Vector(-41.167, 12.887, 35),
             Vector(-41.167, 12.887, 31)
@@ -677,7 +690,7 @@ const PIANO_POSITION_SCRIPTS = {
         Set Global Variable(botSpawn, Vector(-41.016, 13.158, 33.314));
         Set Global Variable(playerSpawn, Vector(-34.5, 12, 32.3));
         Set Global Variable(banTpLocation, Vector(-10.008, 15.802, -40.435));
-        Set Global Variable(defaultHorizontalFacingAngle, -92.554);
+        Set Global Variable(defaultHorizontalFacingAngle, 120.554);
     }
 }
 
@@ -692,41 +705,41 @@ const PIANO_POSITION_SCRIPTS = {
     actions
     {
         Global.notePositions = Array(
-            Vector(-85.410, 13.884, -108.012), Vector(-85.364, 13.896, -108.079), 
-            Vector(-85.368, 13.886, -108.007), Vector(-85.328, 13.897, -108.078), 
-            Vector(-85.325, 13.888, -108.008), Vector(-85.290, 13.887, -107.989), 
-            Vector(-85.247, 13.897, -108.050), Vector(-85.256, 13.885, -107.965), 
-            Vector(-85.217, 13.895, -108.021), Vector(-85.210, 13.888, -107.968), 
-            Vector(-85.180, 13.895, -108.007), Vector(-85.184, 13.883, -107.928), 
-            Vector(-85.147, 13.883, -107.916), Vector(-85.095, 13.895, -107.977), 
-            Vector(-85.107, 13.883, -107.910), Vector(-85.063, 13.896, -107.973), 
-            Vector(-85.066, 13.884, -107.902), Vector(-85.017, 13.886, -107.891), 
-            Vector(-84.979, 13.896, -107.954), Vector(-84.987, 13.884, -107.866), 
-            Vector(-84.943, 13.896, -107.938), Vector(-84.952, 13.884, -107.854), 
-            Vector(-84.908, 13.896, -107.922), Vector(-84.902, 13.886, -107.851), 
-            Vector(-84.871, 13.885, -107.836), Vector(-84.826, 13.895, -107.887), 
-            Vector(-84.832, 13.885, -107.822), Vector(-84.787, 13.897, -107.894), 
-            Vector(-84.795, 13.886, -107.812), Vector(-84.751, 13.888, -107.815), 
-            Vector(-84.711, 13.895, -107.857), Vector(-84.720, 13.883, -107.769), 
-            Vector(-84.681, 13.895, -107.835), Vector(-84.683, 13.882, -107.759), 
-            Vector(-84.643, 13.895, -107.822), Vector(-84.637, 13.887, -107.770), 
-            Vector(-84.604, 13.885, -107.745), Vector(-84.563, 13.894, -107.793), 
-            Vector(-84.561, 13.888, -107.750), Vector(-84.523, 13.896, -107.791), 
-            Vector(-84.524, 13.887, -107.729), Vector(-84.485, 13.884, -107.697), 
-            Vector(-84.444, 13.895, -107.759), Vector(-84.445, 13.888, -107.711), 
-            Vector(-84.415, 13.894, -107.750), Vector(-84.403, 13.888, -107.694), 
-            Vector(-84.373, 13.896, -107.742), Vector(-84.375, 13.885, -107.661), 
-            Vector(-84.339, 13.885, -107.649), Vector(-84.292, 13.896, -107.713), 
-            Vector(-84.298, 13.886, -107.644), Vector(-84.256, 13.897, -107.715), 
-            Vector(-84.262, 13.883, -107.613), Vector(-84.227, 13.883, -107.603), 
-            Vector(-84.172, 13.897, -107.684), Vector(-84.183, 13.886, -107.606), 
-            Vector(-84.146, 13.895, -107.657), Vector(-84.144, 13.886, -107.592), 
-            Vector(-84.103, 13.896, -107.652), Vector(-84.104, 13.885, -107.571), 
-            Vector(-84.068, 13.885, -107.560), Vector(-84.021, 13.896, -107.626), 
-            Vector(-84.023, 13.886, -107.553), Vector(-83.985, 13.895, -107.598), 
+            Vector(-85.410, ${botzpos}, -108.012), Vector(-85.364, ${botzpos}, -108.079), 
+            Vector(-85.368, ${botzpos}, -108.007), Vector(-85.328, ${botzpos}, -108.078), 
+            Vector(-85.325, ${botzpos}, -108.008), Vector(-85.290, ${botzpos}, -107.989), 
+            Vector(-85.247, ${botzpos}, -108.050), Vector(-85.256, ${botzpos}, -107.965), 
+            Vector(-85.217, ${botzpos}, -108.021), Vector(-85.210, ${botzpos}, -107.968), 
+            Vector(-85.180, ${botzpos}, -108.007), Vector(-85.184, ${botzpos}, -107.928), 
+            Vector(-85.147, ${botzpos}, -107.916), Vector(-85.095, ${botzpos}, -107.977), 
+            Vector(-85.107, ${botzpos}, -107.910), Vector(-85.063, ${botzpos}, -107.973), 
+            Vector(-85.066, ${botzpos}, -107.902), Vector(-85.017, ${botzpos}, -107.891), 
+            Vector(-84.979, ${botzpos}, -107.954), Vector(-84.987, ${botzpos}, -107.866), 
+            Vector(-84.943, ${botzpos}, -107.938), Vector(-84.952, ${botzpos}, -107.854), 
+            Vector(-84.908, ${botzpos}, -107.922), Vector(-84.902, ${botzpos}, -107.851), 
+            Vector(-84.871, ${botzpos}, -107.836), Vector(-84.826, ${botzpos}, -107.887), 
+            Vector(-84.832, ${botzpos}, -107.822), Vector(-84.787, ${botzpos}, -107.894), 
+            Vector(-84.795, ${botzpos}, -107.812), Vector(-84.751, ${botzpos}, -107.815), 
+            Vector(-84.711, ${botzpos}, -107.857), Vector(-84.720, ${botzpos}, -107.769), 
+            Vector(-84.681, ${botzpos}, -107.835), Vector(-84.683, ${botzpos}, -107.759), 
+            Vector(-84.643, ${botzpos}, -107.822), Vector(-84.637, ${botzpos}, -107.770), 
+            Vector(-84.604, ${botzpos}, -107.745), Vector(-84.563, ${botzpos}, -107.793), 
+            Vector(-84.561, ${botzpos}, -107.750), Vector(-84.523, ${botzpos}, -107.791), 
+            Vector(-84.524, ${botzpos}, -107.729), Vector(-84.485, ${botzpos}, -107.697), 
+            Vector(-84.444, ${botzpos}, -107.759), Vector(-84.445, ${botzpos}, -107.711), 
+            Vector(-84.415, ${botzpos}, -107.750), Vector(-84.403, ${botzpos}, -107.694), 
+            Vector(-84.373, ${botzpos}, -107.742), Vector(-84.375, ${botzpos}, -107.661), 
+            Vector(-84.339, ${botzpos}, -107.649), Vector(-84.292, ${botzpos}, -107.713), 
+            Vector(-84.298, ${botzpos}, -107.644), Vector(-84.256, ${botzpos}, -107.715), 
+            Vector(-84.262, ${botzpos}, -107.613), Vector(-84.227, ${botzpos}, -107.603), 
+            Vector(-84.172, ${botzpos}, -107.684), Vector(-84.183, ${botzpos}, -107.606), 
+            Vector(-84.146, ${botzpos}, -107.657), Vector(-84.144, ${botzpos}, -107.592), 
+            Vector(-84.103, ${botzpos}, -107.652), Vector(-84.104, ${botzpos}, -107.571), 
+            Vector(-84.068, ${botzpos}, -107.560), Vector(-84.021, ${botzpos}, -107.626), 
+            Vector(-84.023, ${botzpos}, -107.553), Vector(-83.985, ${botzpos}, -107.598), 
             Vector(-83, 12.5, -108.021),
             Vector(-86.217, 13, -109.021));
-        Set Global Variable(botSpawn, Vector(-84.693, 13.873, -107.681));
+        Set Global Variable(botSpawn, Vector(-84.693, ${botzpos}, -107.681));
         Set Global Variable(playerSpawn, Vector(-85.624, 14.349, -104.397));
         Set Global Variable(banTpLocation, Vector(-83.340, 13.248, -58.608));
         Set Global Variable(defaultHorizontalFacingAngle, 161.2);
@@ -737,7 +750,7 @@ const PIANO_POSITION_SCRIPTS = {
 
 // Various scripts corresponding to the options on the converter webpage
 const SCRIPTS = {
-    restrictAbilities: "Disallow Button(Event Player, Button(Melee));Set Ability 1 Enabled(Event Player, False);Set Ability 2 Enabled(Event Player, False);Set Ultimate Ability Enabled(Event Player, False);If(Compare(Event Player, !=, Host Player));Set Primary Fire Enabled(Event Player, False);Set Secondary Fire Enabled(Event Player, False);End;If(Compare(Hero Of(Event Player), ==, Hero(Wrecking Ball)));Disallow Button(Event Player, Button(Crouch));End;",
+    restrictAbilities: "Disallow Button(Event Player, Button(Melee));Set Ability 1 Enabled(Event Player, False);Set Ability 2 Enabled(Event Player, False);If(Compare(Event Player, !=, Host Player));Set Primary Fire Enabled(Event Player, False);Set Secondary Fire Enabled(Event Player, False);End;If(Compare(Hero Of(Event Player), ==, Hero(Wrecking Ball)));Disallow Button(Event Player, Button(Crouch));End;",
     invisibleBots: "Set Invisible(Event Player, All);",
     includeBanSystem: 'rule("Bans for host player"){event{Ongoing - Global;}conditions{Is Button Held(Host Player, Button(Reload)) == True;Is Button Held(Host Player, Button(Crouch)) == True;}actions{Host Player.playerToRemove = Ray Cast Hit Player(Eye Position(Host Player), Eye Position(Host Player) + Facing Direction Of(Host Player) * 30, Filtered Array(All Players(All Teams), !Is Dummy Bot(Current Array Element)), Host Player, True);Teleport(Host Player.playerToRemove, Global.banTpLocation);Set Status(Host Player.playerToRemove, Null, Frozen, 30);Host Player.playerToRemove = Null;}}'
 }
