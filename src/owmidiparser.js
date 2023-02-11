@@ -126,6 +126,7 @@ function readMidiData(mid, settings) {
 
     let skippedNotes = 0;
     let transposedNotes = 0;
+    var isLeft = true;
 
     for (let track of mid.tracks) {
         let percussion = track.channel === 9;
@@ -151,12 +152,12 @@ function readMidiData(mid, settings) {
 
             // If this is percussion, use special range
             if (percussion) {
-                if (DRUM_MAP[notePitch] === undefined) {
-                    console.log(notePitch)
-                    continue;
+                if(isLeft) {
+                    notePitch = DRUM_LEFT;
+                } else {
+                    notePitch = DRUM_RIGHT;
                 }
-                notePitch = DRUM_MAP[notePitch];
-                console.log(notePitch);
+                isLeft = !isLeft;
             }
 
             let noteTime = roundToPlaces(note.time, NOTE_PRECISION);

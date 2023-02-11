@@ -1,28 +1,27 @@
-const pianoHero = `D.Va`;
+const pianoHero = `Symmetra`;
+const drumHero = `Torbjörn`;
 const botzpos = `13.72`;
+const drumbotzpos = `13.4`;
 const echozpos = `13.7`;
 const playerscale = `1`;
+var damageDva = ``;
+if (pianoHero == `D.Va`) {
+    damageDva = `Damage(Last Created Entity, Null, 800);`;
+}
+const hideZarya = false;
+var hideZaryaCode = ``;
+if (hideZarya) {
+    hideZaryaCode = `Set Invisible(Last Created Entity, All);`;
+}
+const globalspeed = `100`;
 
 
-
-// Custom game settings (lobby settings + workshop script) can only be imported 
-// if their language matches the text language of the game.
-// Only the English settings are needed, as OverPy can translate them to all other languages.
-const playNote = `
-    Global.currentKey = Global.pitchArrays[Round To Integer(
-        Global.pitchArrayIndex / Global.maxArraySize, Down)][Global.pitchArrayIndex % Global.maxArraySize];
-    Global.currentKeyPos = Global.notePositions[Global.pitchArrays[Round To Integer(
-        Global.pitchArrayIndex / Global.maxArraySize, Down)][Global.pitchArrayIndex % Global.maxArraySize]];
-    
-    Teleport(Global.bots[Global.currentBotIndex], Global.currentKeyPos);
-    Press Button(Global.bots[Global.currentBotIndex], Button(Primary Fire));
-`;
 
 const BASE_SETTINGS = `settings
 {
     main
     {
-        Description: "Overwatch MIDI Pianist mode by ScroogeD. Convert MIDI songs to Overwatch piano songs with this converter on GitHub: github.com/ScroogeD2/owmidiconverter"
+        Description: "youtube.com/@oflatt"
     }
 
     lobby
@@ -119,6 +118,7 @@ variables
         53: ccube
         54: currentKey
         55: currentKeyPos
+        56: currentZaryaIndex
 
     player:
         1: playNote
@@ -148,14 +148,14 @@ rule("Global init")
         Global.botScalar = 0.15;
         Global.bots = Empty Array;
         Global.zarya = Empty Array;
-        Global.speedPercent = 90;
+        Global.speedPercent = ${globalspeed};
         Global.hasDecompressionFinished = False;
         Create HUD Text(All Players(All Teams), Null, Null, Custom String(
             "Host player: Press Interact to start and stop the song, \\nand Crouch+Primary or Crouch+Secondary Fire to change speed"), Top,
             0, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
-        Create HUD Text(All Players(All Teams), Null, Custom String("By ScroogeD"), Null, Left, 0, Color(White), Color(Yellow), Color(White),
+        Create HUD Text(All Players(All Teams), Null, Custom String("By oflatt"), Null, Left, 0, Color(White), Color(Yellow), Color(White),
             Visible To and String, Default Visibility);
-        Create HUD Text(All Players(All Teams), Null, Custom String("Website: github.com/ScroogeD2/owmidiconverter"), Null, Left, 1, Color(White),
+        Create HUD Text(All Players(All Teams), Null, Custom String("youtube.com/@oflatt"), Null, Left, 1, Color(White),
             Color(Yellow), Color(White), Visible To and String, Default Visibility);
         Create HUD Text(Filtered Array(All Players(All Teams), Has Status(Current Array Element, Frozen)), Custom String(
             "The host player has decided to remove you temporarily. Please wait a minute before rejoining."), Null, Null, Top, 1, Color(White),
@@ -165,6 +165,11 @@ rule("Global init")
             Global.decompressionPercentages[0], Global.decompressionPercentages[1], Global.decompressionPercentages[2]), 
             Top, 10, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
         Global.decompressionPercentages = Array(0, 0, 0);
+
+        Global.blockPos = Empty Array;
+        For Global Variable(tempi, 0, //maxCubes, 1);
+            Modify Global Variable(blockPos, Append To Array, 0.0);
+        End;
     }
 }
 
@@ -194,31 +199,7 @@ rule("Player init")
         Wait(0.016, Ignore Condition);
         Set Facing(Event Player, Direction From Angles(Global.defaultHorizontalFacingAngle, Vertical Facing Angle Of(Event Player)), To World);
         Preload Hero(Event Player, Hero(${pianoHero}));
-        Preload Hero(Event Player, Hero(Zarya));
-    }
-}
-
-rule("Dummy init zarya")
-{
-    event
-    {
-        Ongoing - Each Player;
-        All;
-        All;
-    }
-
-    conditions
-    {
-        Is Dummy Bot(Event Player) == True;
-        Hero Of(Event Player) == Hero(Zarya);
-    }
-
-    actions
-    {
-        Set Max Health(Event Player, 20000);
-        Disable Movement Collision With Environment(Event Player, False);
-        Disable Movement Collision With Players(Event Player);
-        Wait(0.016, Ignore Condition);
+        Preload Hero(Event Player, Hero(${drumHero}));
     }
 }
 
@@ -292,7 +273,7 @@ rule("Interact: create dummy bots, start playing")
             Set Facing(Last Created Entity, Direction From Angles(Global.defaultHorizontalFacingAngle+180, 89), To World);
 
             Wait(0.1, Ignore Condition);
-            Damage(Last Created Entity, Null, 800);
+            ${damageDva}
         End;
         Wait(3, Ignore Condition);
 
@@ -308,29 +289,26 @@ rule("Interact: create dummy bots, start playing")
         End;
         Wait(1, Ignore Condition);
 
-        Create Dummy Bot(Hero(Zarya), Team 1, -1, Global.botSpawn, Vector(0, 0, 0));
-        Modify Global Variable(zarya, Append To Array, Last Created Entity);
-        Wait(0.016, Ignore Condition);
-        Create Dummy Bot(Hero(Zarya), Team 1, -1, Global.botSpawn, Vector(0, 0, 0));
-        Modify Global Variable(zarya, Append To Array, Last Created Entity);
-        Wait(0.016, Ignore Condition);
+        While(Count Of(Global.zarya) < 24-(Count Of(Global.bots)) - 3);
+            Create Dummy Bot(Hero(${drumHero}), Team 1, -1, Global.notePositions[64], Vector(0, 0, 0));
+            Disable Movement Collision With Environment(Last Created Entity, False);
+            Disable Movement Collision With Players(Last Created Entity);
+            Set Gravity(Last Created Entity, 0);
+            Wait(0.032, Ignore Condition);
+            Set Facing(Last Created Entity, Direction From Angles(Global.defaultHorizontalFacingAngle+180, 89), To World);
+            Modify Global Variable(zarya, Append To Array, Last Created Entity);
+            ${hideZaryaCode}
+            Wait(0.1, Ignore Condition);
+        End;
 
-        Teleport(Global.zarya[0], Global.notePositions[64]);
-        Wait(0.016, Ignore Condition);
-        Set Facing(Global.zarya[0], Direction From Angles(Global.defaultHorizontalFacingAngle, 89), To World);
-        Wait(0.016, Ignore Condition);
-        Teleport(Global.zarya[1], Global.notePositions[65]);
-        Wait(0.016, Ignore Condition);
-        Set Facing(Global.zarya[1], Direction From Angles(Global.defaultHorizontalFacingAngle, 89), To World);
+        
+        
         Wait(1, Ignore Condition);
         Global.songPlayingState = 2;
 
         Global.nextFall = 0;
         Global.nextFallChord = 0;
-        Global.blockPos = Empty Array;
-        For Global Variable(tempi, 0, //maxCubes, 1);
-            Modify Global Variable(blockPos, Append To Array, 0.0);
-        End;
+        Global.time = -2;
 
         //cubesHere
     }
@@ -429,7 +407,6 @@ rule("Play loop")
         "value = songArray[math.floor(index / maxArraySize)][index % maxArraySize]"
         disabled Continue;
         "While((index < 2dArrayLength) && songPlayingState)"
-        Global.time = -2;
 
         While(Global.timeArrayIndex < Global.maxArraySize * (Count Of(Global.timeArrays) - 1) + Count Of(Last Of(Global.timeArrays))
             && Global.songPlayingState);
@@ -442,9 +419,18 @@ rule("Play loop")
             "Loop as many times as there are pitches in the current chord, as indicated by the value in chordArrays. Assign the pitches to the bots."
             For Global Variable(i, 0, Global.chordArrays[Round To Integer(Global.timeArrayIndex / Global.maxArraySize, Down)
                 ][Global.timeArrayIndex % Global.maxArraySize], 1);
-                Global.bots[Global.currentBotIndex].currentPitchIndex = Global.pitchArrayIndex;
-                Global.bots[Global.currentBotIndex].playNote = True;
-                Global.currentBotIndex = (Global.currentBotIndex + 1) % Count Of(Global.bots);
+                Global.tempi = Global.pitchArrays[Round To Integer(
+                    Global.pitchArrayIndex / Global.maxArraySize, Down)][Global.pitchArrayIndex % Global.maxArraySize];
+                If(Global.tempi > 63);
+                    Global.zarya[Global.currentZaryaIndex].currentPitchIndex = Global.pitchArrayIndex;
+                    Global.zarya[Global.currentZaryaIndex].playNote = True;
+                    Global.currentZaryaIndex = (Global.currentZaryaIndex + 1) % Count Of(Global.zarya);
+                Else;
+                    Global.bots[Global.currentBotIndex].currentPitchIndex = Global.pitchArrayIndex;
+                    Global.bots[Global.currentBotIndex].playNote = True;
+                    Global.currentBotIndex = (Global.currentBotIndex + 1) % Count Of(Global.bots);
+                End;
+                
                 Global.pitchArrayIndex += 1;
             End;
             Global.timeArrayIndex += 1;
@@ -473,26 +459,18 @@ rule("Play note")
     {
         Event Player.currentKey = Global.pitchArrays[Round To Integer(
             Event Player.currentPitchIndex / Global.maxArraySize, Down)][Event Player.currentPitchIndex % Global.maxArraySize];
+        
+            
+        Event Player.currentKeyPos = Global.notePositions[Global.pitchArrays[Round To Integer(
+            Event Player.currentPitchIndex / Global.maxArraySize, Down)][Event Player.currentPitchIndex % Global.maxArraySize]];
+        Teleport(Event Player, Event Player.currentKeyPos);
+        Wait(0.032, Ignore Condition);
+
         If(Event Player.currentKey > 63);
-            Create Dummy Bot(Hero(Zarya), Team 1, -1, Global.notePositions[Event Player.currentKey - 64], Direction From Angles(Horizontal Facing Angle Of(Global.zarya[Event Player.currentKey-64])+90, Vertical Facing Angle Of(Global.zarya[Event Player.currentKey-64])));
-            Destroy Dummy Bot(Team Of(Global.zarya[Event Player.currentKey - 64]), Slot Of(Global.zarya[Event Player.currentKey - 64]));
-            Global.zarya[Event Player.currentKey - 64] = Last Created Entity;
-            Wait(0.016, Ignore Condition);
-            Set Facing(Global.zarya[Event Player.currentKey - 64], Direction From Angles(Horizontal Facing Angle Of(Global.zarya[Event Player.currentKey - 64]), 89), To World);
-            Wait(0.016, Ignore Condition);
-            Teleport(Global.zarya[Event Player.currentKey - 64], Global.notePositions[Event Player.currentKey]);
-            Wait(0.032, Ignore Condition);
-
-            Event Player.currentKeyPos = Global.notePositions[Event Player.currentKey];
-
-            Start Holding Button(Global.zarya[Event Player.currentKey - 64], Button(Secondary Fire));
+            Start Holding Button(Event Player, Button(Primary Fire));
             Wait(0.064, Ignore Condition);
-            Stop Holding Button(Global.zarya[Event Player.currentKey - 64], Button(Secondary Fire));
-        Else If (0 == 0);
-            Event Player.currentKeyPos = Global.notePositions[Global.pitchArrays[Round To Integer(
-                Event Player.currentPitchIndex / Global.maxArraySize, Down)][Event Player.currentPitchIndex % Global.maxArraySize]];
-            Teleport(Event Player, Event Player.currentKeyPos);
-            Wait(0.032, Ignore Condition);
+            Stop Holding Button(Event Player, Button(Primary Fire));
+        Else;
             Start Holding Button(Event Player, Button(Primary Fire));
             Wait(0.064, Ignore Condition);
             Stop Holding Button(Event Player, Button(Primary Fire));
@@ -747,8 +725,8 @@ const PIANO_POSITION_SCRIPTS = {
             Vector(-84.103, ${botzpos}, -107.652), Vector(-84.104, ${botzpos}, -107.571), 
             Vector(-84.068, ${botzpos}, -107.560), Vector(-84.021, ${botzpos}, -107.626), 
             Vector(-84.023, ${botzpos}, -107.553), Vector(-83.985, ${botzpos}, -107.598), 
-            Vector(-83, 12.5, -108.021),
-            Vector(-86.217, 13, -109.021));
+            Vector(-83, ${drumbotzpos}, -108.021),
+            Vector(-86.217, ${drumbotzpos}, -109.021));
         Set Global Variable(botSpawn, Vector(-84.693, ${botzpos}, -107.681));
         Set Global Variable(playerSpawn, Vector(-85.624, 14.349, -104.397));
         Set Global Variable(banTpLocation, Vector(-83.340, 13.248, -58.608));
